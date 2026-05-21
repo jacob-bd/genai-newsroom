@@ -1,0 +1,280 @@
+{
+  "generated_at": "2026-05-19T01:00:00.407101",
+  "total_posts": 1315,
+  "date_range": {
+    "start": "2026-01-15",
+    "end": "2026-12-18"
+  },
+  "top_categories": [
+    {
+      "category": "other",
+      "count": 586,
+      "pct": 44.6,
+      "examples": [
+        "Teens Sue Musk's xAI Over Grok CSAM 🔞",
+        "Google Is Banning Paying Users for Using OpenClaw. I'm One of Them.",
+        "Anthropic just built a wall. Builders, we're not done.",
+        "Netflix Just Dropped a Legal Nuke on ByteDance",
+        "𝘼𝙣𝙩𝙝𝙧𝙤𝙥𝙞𝙘: 𝙏𝙝𝙚 𝘿𝙚𝙨𝙩𝙧𝙤𝙮𝙚𝙧 𝙤𝙛 𝙎𝙩𝙤𝙘𝙠 𝙈𝙖𝙧𝙠𝙚𝙩𝙨",
+        "Google and OpenAI Secure the Federal AI Duopoly as Anthropic Falls Behind 🏛🛡"
+      ]
+    },
+    {
+      "category": "ai_models_research",
+      "count": 218,
+      "pct": 16.6,
+      "examples": [
+        "\"Cancel ChatGPT\" Is Snowballing After OpenAI's DoD Move 📉",
+        "Google faces wrongful death suit over Gemini interactions 🚨",
+        "MiniMax officially announced the M2.7 model on March 18, 2026. It's an agent-focused system capable of recursive self-improvement, handling complex coding workflows with a 56.22% score on SWE-Pro, plu",
+        "Anthropic quietly opened the floodgates for Claude users",
+        "Anthropic: Claude Code Leak Triggers 8,000 Takedowns 🛡️",
+        "Career-Ops Turns Claude Code Into a Job Search Engine 🧰"
+      ]
+    },
+    {
+      "category": "agents_automation",
+      "count": 162,
+      "pct": 12.3,
+      "examples": [
+        "️ AWS Launches Partner Central AI Agents",
+        "MiniMax officially announced the M2.7 model on March 18, 2026. It's an agent-focused system capable of recursive self-improvement, handling complex coding workflows with a 56.22% score on SWE-Pro, plu",
+        "Brave Backs .agent, Doesn't Own It 🤖",
+        "Perplexity Turns Your Mac Into an Always-On AI Agent 🤖",
+        "GitHub Copilot Wants Your Inputs Too 🏛️",
+        "Grok 4.2 is Live: The Age of the Agent Council"
+      ]
+    },
+    {
+      "category": "funding_raises",
+      "count": 132,
+      "pct": 10.0,
+      "examples": [
+        "️ Nvidia is putting $2 billion behind Nebius, and that's not their only AI infrastructure move",
+        "Apple Unveils MacBook Neo at $599, Bringing Mac to a New Price Tier",
+        "️ Anthropic is currently investigating an unresolved incident involving elevated error rates on",
+        "Elon Musk's $150B 'Legal Ambush' Against OpenAI ⚖️",
+        "AI Investor Loyalty Is Dead. Dozens of OpenAI VCs Now Back Anthropic Too.",
+        "Meta Bets $100B on AMD"
+      ]
+    },
+    {
+      "category": "product_launches",
+      "count": 121,
+      "pct": 9.2,
+      "examples": [
+        "Apple Unveils MacBook Neo at $599, Bringing Mac to a New Price Tier",
+        "️ AWS Launches Partner Central AI Agents",
+        "MiniMax officially announced the M2.7 model on March 18, 2026. It's an agent-focused system capable of recursive self-improvement, handling complex coding workflows with a 56.22% score on SWE-Pro, plu",
+        "Anthropic Drops Free Usage Credits for Paid Users 💰",
+        "Tesla's \"Ghost\" Robotaxi Launches in Texas 🚕",
+        "Google DeepMind drops Gemini Robotics ER 1.6"
+      ]
+    },
+    {
+      "category": "hardware_chips",
+      "count": 108,
+      "pct": 8.2,
+      "examples": [
+        "️ Nvidia is putting $2 billion behind Nebius, and that's not their only AI infrastructure move",
+        "️ IBM Put Quantum Hardware Into a Real Materials Test",
+        "Hardware Utilities Weaponized in Supply Chain Attack 💻",
+        "Two ex-Google engineers just got indicted for stealing Tensor chip secrets. And sending them to Iran.",
+        "Meta Bets $100B on AMD",
+        "NVIDIA Just Bought Its 5th Israeli Company"
+      ]
+    },
+    {
+      "category": "business_strategy",
+      "count": 70,
+      "pct": 5.3,
+      "examples": [
+        "️ AWS Launches Partner Central AI Agents",
+        "Meta's \"Stay Home\" Order: The Pre-Layoff Playbook 🚨",
+        "Microsoft Stops Paying OpenAI Revenue Share 🔓",
+        "Anthropic Partners with Intuit on Financial AI Agents",
+        "Mistral AI Partners with Accenture",
+        "OpenAI Steps In as Pentagon's New AI Partner 🤝"
+      ]
+    },
+    {
+      "category": "acquisitions_ma",
+      "count": 46,
+      "pct": 3.5,
+      "examples": [
+        "Caterpillar Acquires Collapsed Monarch Tractor 🚜",
+        "SpaceX and xAI Merger Confirmed",
+        "Stripe Eyes PayPal in Potential Fintech Mega-Merger",
+        "Stripe Eyes PayPal in Potential Fintech Mega-Merger",
+        "Anthropic just acquired Vercept to make Claude actually use your computer.",
+        "SpaceX acquires xAI in massive $1.25T deal 🚀"
+      ]
+    },
+    {
+      "category": "open_source",
+      "count": 38,
+      "pct": 2.9,
+      "examples": [
+        "GitHub Copilot Wants Your Inputs Too 🏛️",
+        "India's Sarvam open-sources 30B and 105B models",
+        "OpenAI is throwing a massive lifeline to the open-source community",
+        "️ ElevenLabs now has a serious open-source competitor that runs entirely on your Mac",
+        "Nvidia is dropping a $26 billion open-weight bomb on the model labs",
+        "️ clix brings X into the terminal, no API keys required The open source project clix lets users and AI agents search, read, and post on X from the terminal using browser-cookie auth instead of the off"
+      ]
+    },
+    {
+      "category": "security",
+      "count": 29,
+      "pct": 2.2,
+      "examples": [
+        "GTA 6 Developer Rockstar Breached by Hacker Group 🏴‍☠️",
+        "Claude just got used to breach a government. 🇲🇽",
+        "Hacktivists Say They Hit DHS and Dropped ICE Contract Data 🧾",
+        "Iranian Hacking Groups Went Quiet During Strike Week 👀",
+        "A Likely US Government iPhone Exploit Kit Is Now in Criminal Hands",
+        "️ Claude helped Mozilla find 22 Firefox vulnerabilities in two weeks"
+      ]
+    },
+    {
+      "category": "regulation_policy",
+      "count": 23,
+      "pct": 1.7,
+      "examples": [
+        "Apple’s Walled Garden Finally Cracks in the EU",
+        "️ OpenAI's military ban hit a Microsoft loophole",
+        "The Treasury Just Gave Wall Street an AI Rulebook, Without Calling It Regulation",
+        "🇪🇺 EU Moves to Ban AI-Generated Nonconsensual Imagery",
+        "Judge Blocks Trump's Anthropic Ban 🔨",
+        "️ California Defies Federal AI Policy With New Rules"
+      ]
+    },
+    {
+      "category": "breaking_news",
+      "count": 16,
+      "pct": 1.2,
+      "examples": [
+        "🀄 Alibaba's Qwen 3.5 Is Breaking the Economics of Proprietary AI.",
+        "BREAKING 🚨: GOOGLE MIGHT BE PREPARING GEMINI 3.1 PRO PREVIEW FOR THE RELEASE!",
+        "BREAKING: Google Gemini 3.1 Pro Preview Model is available on Google Vertex AI and AI Studio",
+        "BREAKING 🚨: Codex for Windows is now available on the Microsoft Store!",
+        "BREAKING: Microsoft Drops MAI-Image-2 Text-to-Image Model 📸",
+        "BREAKING: Elon Musk just gave Tesla's \"TERAFAB\" story a lot more weight"
+      ]
+    }
+  ],
+  "top_domains": [
+    {
+      "domain": "bloomberg.com",
+      "count": 104,
+      "pct": 7.9
+    },
+    {
+      "domain": "techcrunch.com",
+      "count": 99,
+      "pct": 7.5
+    },
+    {
+      "domain": "github.com",
+      "count": 70,
+      "pct": 5.3
+    },
+    {
+      "domain": "cnbc.com",
+      "count": 61,
+      "pct": 4.6
+    },
+    {
+      "domain": "the-decoder.com",
+      "count": 47,
+      "pct": 3.6
+    },
+    {
+      "domain": "x.com",
+      "count": 43,
+      "pct": 3.3
+    },
+    {
+      "domain": "theverge.com",
+      "count": 38,
+      "pct": 2.9
+    },
+    {
+      "domain": "venturebeat.com",
+      "count": 35,
+      "pct": 2.7
+    },
+    {
+      "domain": "reuters.com",
+      "count": 34,
+      "pct": 2.6
+    },
+    {
+      "domain": "siliconangle.com",
+      "count": 33,
+      "pct": 2.5
+    },
+    {
+      "domain": "wired.com",
+      "count": 19,
+      "pct": 1.4
+    },
+    {
+      "domain": "openai.com",
+      "count": 18,
+      "pct": 1.4
+    },
+    {
+      "domain": "reddit.com",
+      "count": 17,
+      "pct": 1.3
+    },
+    {
+      "domain": "tomshardware.com",
+      "count": 16,
+      "pct": 1.2
+    },
+    {
+      "domain": "huggingface.co",
+      "count": 13,
+      "pct": 1.0
+    },
+    {
+      "domain": "blog.google",
+      "count": 12,
+      "pct": 0.9
+    },
+    {
+      "domain": "engadget.com",
+      "count": 12,
+      "pct": 0.9
+    },
+    {
+      "domain": "arstechnica.com",
+      "count": 12,
+      "pct": 0.9
+    },
+    {
+      "domain": "techradar.com",
+      "count": 12,
+      "pct": 0.9
+    },
+    {
+      "domain": "theregister.com",
+      "count": 10,
+      "pct": 0.8
+    }
+  ],
+  "monthly_volume": {
+    "2026-01": 1,
+    "2026-02": 8,
+    "2026-03": 20,
+    "2026-04": 21,
+    "2026-05": 1258,
+    "2026-06": 1,
+    "2026-07": 2,
+    "2026-09": 2,
+    "2026-12": 2
+  },
+  "prose_profile": null
+}

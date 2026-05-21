@@ -1,0 +1,27 @@
+# Runtime data — never commit
+data/news_dedup.db
+data/news_dedup.db-wal
+data/news_dedup.db-shm
+data/*.bak.*
+data/newsroom_pending.json
+data/newsroom_whiteboard.md
+data/last_scan_candidates.txt
+data/channel_stats.json
+data/github_trending_state.json
+
+# Generated media and drafts
+media/
+tmp/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Node
+skills/news-cards/node_modules/
+
+# Secrets / local env
+.env
+*.env
