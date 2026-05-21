@@ -18,7 +18,7 @@ status: approved
 **Execution scope:** Draft requests (including edit comments) authorize the full workflow through Test-channel delivery. Execute continuously: research → draft → image → test-channel post. "Approved" triggers live post + Buffer queue push immediately.
 
 **If Jacob says "draft #N" (a number):**
-1. Read `~/.alef-agent/workspace/memory/last_scan_picks.json`
+1. Read `~/.alef-agent/workspace/newsroom/data/last_scan_picks.json`
 2. Skip `_scan_meta`, find the object where `"rank": N`
 3. Use that story's `title`, `url`, and `summary` as the drafting topic
 4. If not found, check `last_scan_picks_prev.json`
@@ -40,7 +40,7 @@ Announce: "Newsroom loaded. Checking recency before drafting."
 
 1.  **HIGH RISK STEPS**: This applies to **Initial Test Posts**, **Inline Edits**, and **Manual Buffer Pushes** where raw text is passed to the script.
 2.  **THE FIX**: **NEVER** use the `--text` argument for `telegram_post.py`, `telegram_edit.py`, or `buffer_push.py` during these steps. 
-3.  **WORKFLOW**: Always write the post content to a temporary file first (e.g., `~/.alef-agent/workspace/tmp/<slug>_draft.txt`) and use the `--file` argument.
+3.  **WORKFLOW**: Always write the post content to a temporary file first (e.g., `~/.alef-agent/workspace/newsroom/tmp/<slug>_draft.txt`) and use the `--file` argument.
 
 *Note: Publishing to the Live channel using `--copy-from-chat` is safe as it does not involve shell text expansion.*
 
@@ -52,12 +52,12 @@ Announce: "Newsroom loaded. Checking recency before drafting."
 
 | Purpose | Path |
 |---------|------|
-| Draft text | `~/.alef-agent/workspace/tmp/<slug>_draft.txt` |
-| Edited draft | `~/.alef-agent/workspace/tmp/<slug>_edit.txt` |
-| Live msg_id log | `~/.alef-agent/workspace/tmp/<slug>_live_msg_id.txt` |
-| Generated image | `~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>.png` |
+| Draft text | `~/.alef-agent/workspace/newsroom/tmp/<slug>_draft.txt` |
+| Edited draft | `~/.alef-agent/workspace/newsroom/tmp/<slug>_edit.txt` |
+| Live msg_id log | `~/.alef-agent/workspace/newsroom/tmp/<slug>_live_msg_id.txt` |
+| Generated image | `~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>.png` |
 
-**Cleanup (Phase 3 gate):** After live post is confirmed, delete `~/.alef-agent/workspace/tmp/<slug>_draft.txt`, `~/.alef-agent/workspace/tmp/<slug>_edit.txt`, `~/.alef-agent/workspace/tmp/<slug>_live_msg_id.txt`.
+**Cleanup (Phase 3 gate):** After live post is confirmed, delete `~/.alef-agent/workspace/newsroom/tmp/<slug>_draft.txt`, `~/.alef-agent/workspace/newsroom/tmp/<slug>_edit.txt`, `~/.alef-agent/workspace/newsroom/tmp/<slug>_live_msg_id.txt`.
 
 **Never** save files directly to `~/.alef-agent/workspace/` root.
 
@@ -65,7 +65,7 @@ Announce: "Newsroom loaded. Checking recency before drafting."
 
 ## Phase 0: Whiteboard Handoff Check (first)
 
-Read `~/.alef-agent/workspace/memory/newsroom_whiteboard.md` immediately.
+Read `~/.alef-agent/workspace/newsroom/data/newsroom_whiteboard.md` immediately.
 
 - If a block exists for this story: load its state (draft HTML, image path, test channel msg_id) and resume from the last saved milestone.
 - If no matching block: proceed normally. Create one after drafting.
@@ -92,7 +92,7 @@ Read `~/.alef-agent/workspace/memory/newsroom_whiteboard.md` immediately.
 ## Phase 0.6: Check Prior Coverage (required)
 
 1. Identify the key company or topic (e.g., "Nvidia", "Karpathy", "AI regulation")
-2. Run: `python3 ~/.alef-agent/workspace/scripts/dedup_db.py --search "<company or topic>"`
+2. Run: `python3 ~/.alef-agent/workspace/newsroom/scripts/dedup_db.py --search "<company or topic>"`
 3. Entity alias expansion is automatic ("Nvidia" also catches "Jensen Huang", "DLSS", "Nemotron", etc.)
 
 
@@ -205,13 +205,13 @@ Jacob switches mode by saying "use template" or "use template: dark-editorial / 
 
 **Template mode render command:**
 ```bash
-HOME=/Users/jbd node /Users/jbd/.alef-agent/workspace/skills/news-cards/render.mjs \
+HOME=/Users/jbd node /Users/jbd/.alef-agent/workspace/newsroom/skills/news-cards/render.mjs \
   --template dark-editorial \
   --category "CATEGORY" \
   --headline "FULL HEADLINE" \
   --highlight "KEYWORD" \
   --subline "Subline text here." \
-  --output ~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>.png
+  --output ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>.png
 ```
 - `--highlight` wraps one keyword in hot pink. Optional.
 - For `hot-pink-split` also pass: `--stat-labels "Label 1,Label 2,Label 3"` and `--stat-values "Val1,Val2,Val3"`
@@ -243,12 +243,12 @@ Write a story-specific 16:9 background prompt — vivid, photorealistic, not hea
 
 **With gemcli (primary):**
 ```bash
-HOME=/Users/jbd /Users/jbd/.alef-agent/workspace/scripts/gemcli_image.sh "<BACKGROUND PROMPT>" -o ~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>_clean.png
+HOME=/Users/jbd /Users/jbd/.alef-agent/workspace/newsroom/scripts/gemcli_image.sh "<BACKGROUND PROMPT>" -o ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>_clean.png
 ```
 
 **With gptcli (fallback):**
 ```bash
-HOME=/Users/jbd gptcli image generate "<BACKGROUND PROMPT>" -o ~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>_clean.png
+HOME=/Users/jbd gptcli image generate "<BACKGROUND PROMPT>" -o ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>_clean.png
 ```
 
 Background QA before proceeding:
@@ -267,9 +267,9 @@ After background passes QA, ALWAYS save it as a separate clean file. Apply the o
 Use `_clean.png` suffix for the original background and `<slug>.png` for the overlaid version:
 
 ```bash
-HOME=/Users/jbd python3 /Users/jbd/.alef-agent/workspace/scripts/news_image_overlay.py \
-  ~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>_clean.png \
-  ~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>.png \
+HOME=/Users/jbd python3 /Users/jbd/.alef-agent/workspace/newsroom/scripts/news_image_overlay.py \
+  ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>_clean.png \
+  ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>.png \
   'Line 1 Text' 'Line 2 Text'
 ```
 
@@ -284,7 +284,7 @@ If overlay edits are needed later, always regenerate from the clean background (
 Headline rules: 6–8 words total, 3–4 words per line, states the news fact, no em dashes.
 
 ### Gate: Step 4 Complete
-- [ ] Background generated and saved to `workspace/Media/YYYY-MM-DD_<slug>.png`
+- [ ] Background generated and saved to `workspace/newsroom/media/YYYY-MM-DD_<slug>.png`
 - [ ] Background is story-specific with no text artifacts
 - [ ] Pillow overlay applied — both headline lines visible, colors correct
 - [ ] Text readable at Telegram preview size
@@ -298,14 +298,14 @@ Headline rules: 6–8 words total, 3–4 words per line, states the news fact, n
 - [ ] Is the opinion label formatted correctly using `<b>` tags?
 - [ ] Was the image generated and passed to the script?
 
-1. Save draft to `~/.alef-agent/workspace/tmp/<slug>_draft.txt`
+1. Save draft to `~/.alef-agent/workspace/newsroom/tmp/<slug>_draft.txt`
 2. Post using the atomic wrapper — this ONE command handles posting, pending.json, whiteboard, and update-group notification:
 ```bash
-HOME=/Users/jbd python3 ~/.alef-agent/workspace/scripts/newsroom_post.py \
+HOME=/Users/jbd python3 ~/.alef-agent/workspace/newsroom/scripts/newsroom_post.py \
   --slug "<slug>" \
-  --draft ~/.alef-agent/workspace/tmp/<slug>_draft.txt \
-  --image ~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>.png \
-  --clean-bg ~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>_clean.png \
+  --draft ~/.alef-agent/workspace/newsroom/tmp/<slug>_draft.txt \
+  --image ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>.png \
+  --clean-bg ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>_clean.png \
   --headline1 "LINE ONE TEXT" \
   --headline2 "LINE TWO TEXT" \
   --emoji "<EMOJI>" \
@@ -319,7 +319,7 @@ HOME=/Users/jbd python3 ~/.alef-agent/workspace/scripts/newsroom_post.py \
 4. If Jacob requests manual edits via text: use `telegram_edit.py --caption` as before.
 
 ### Gate: Step 5 Complete
-- [ ] Draft saved to `~/.alef-agent/workspace/tmp/<slug>_draft.txt`
+- [ ] Draft saved to `~/.alef-agent/workspace/newsroom/tmp/<slug>_draft.txt`
 - [ ] `newsroom_post.py` ran successfully (outputs `SUCCESS: msg_id=...`)
 - [ ] Jacob notified in News Update Group (done automatically by the script)
 
@@ -332,10 +332,10 @@ HOME=/Users/jbd python3 ~/.alef-agent/workspace/scripts/newsroom_post.py \
 **Manual edit flow (Jacob types edit instructions in News Update Group):**
 1. Apply edits directly to the existing Test draft using `telegram_edit.py`:
 ```bash
-python3 ~/.alef-agent/workspace/scripts/telegram_edit.py \
+python3 ~/.alef-agent/workspace/newsroom/scripts/telegram_edit.py \
   --channel test \
   --message-id <MSG_ID> \
-  --file ~/.alef-agent/workspace/tmp/<slug>_edit.txt \
+  --file ~/.alef-agent/workspace/newsroom/tmp/<slug>_edit.txt \
   --caption
 ```
    The test channel (`--channel test`) **automatically re-attaches the Approve/Edit/Drop keyboard** on every edit. No extra flag needed. To explicitly remove the keyboard, pass `--no-keyboard`.
@@ -362,22 +362,22 @@ python3 ~/.alef-agent/workspace/scripts/telegram_edit.py \
 
 1. Copy from test channel — never post from file:
 ```bash
-python3 ~/.alef-agent/workspace/scripts/telegram_post.py \
+python3 ~/.alef-agent/workspace/newsroom/scripts/telegram_post.py \
   --channel live \
   --copy-from-chat -1003889167143 \
   --copy-msg-id <TEST_MSG_ID> \
   --title "<Full Story Headline>" \
   --react <EMOJI> \
-  --log ~/.alef-agent/workspace/tmp/<slug>_live_msg_id.txt
+  --log ~/.alef-agent/workspace/newsroom/tmp/<slug>_live_msg_id.txt
 ```
 **CRITICAL: You MUST include the `--react <EMOJI>` flag. Run foreground only, never `&`.**
 
 2. Ask Jacob: "Queue, Publish Now, or Draft?" and push to Buffer per his answer (default: --queue for image posts, --draft for video).
 
-3. Log to `memory/news_log.md`:
+3. Log to `newsroom/data/news_log.md`:
    `YYYY-MM-DD HH:MM TZ | POSTED | Full Story Title | msg_id:NNN | https://t.me/genaispot/NNN | https://original-article-url.com`
 4. Delete this story's block from the newsroom whiteboard.
-5. Clean up temp files: `rm -f ~/.alef-agent/workspace/tmp/<slug>_draft.txt ~/.alef-agent/workspace/tmp/<slug>_edit.txt ~/.alef-agent/workspace/tmp/<slug>_live_msg_id.txt`
+5. Clean up temp files: `rm -f ~/.alef-agent/workspace/newsroom/tmp/<slug>_draft.txt ~/.alef-agent/workspace/newsroom/tmp/<slug>_edit.txt ~/.alef-agent/workspace/newsroom/tmp/<slug>_live_msg_id.txt`
 6. Confirm to Jacob in News Update Group: "Posted live. [link]"
 
 ### Gate: Phase 3 Complete (manual fallback only — button flow is fully automatic)
@@ -401,13 +401,13 @@ For video posts: only 📝 Draft is offered (no video — Jacob uploads manually
 
 ```bash
 # Text/image post:
-HOME=/Users/jbd python3 ~/.alef-agent/workspace/scripts/buffer_push.py \
+HOME=/Users/jbd python3 ~/.alef-agent/workspace/newsroom/scripts/buffer_push.py \
   --telegram-msg <LIVE_MSG_ID> \
-  --image ~/.alef-agent/workspace/Media/YYYY-MM-DD_<slug>.png \
+  --image ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>.png \
   --queue
 
 # Video post (draft, no video):
-HOME=/Users/jbd python3 ~/.alef-agent/workspace/scripts/buffer_push.py \
+HOME=/Users/jbd python3 ~/.alef-agent/workspace/newsroom/scripts/buffer_push.py \
   --telegram-msg <LIVE_MSG_ID> \
   --draft
 ```
