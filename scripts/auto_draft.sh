@@ -291,6 +291,33 @@ print('')  # No valid JSON found
     continue
   fi
 
+  # Validate headline lines: H2 must not start with lowercase (split-word bug)
+  H2_FIRST=$(echo "$H2" | cut -c1)
+  if echo "$H2_FIRST" | grep -q '[a-z]'; then
+    echo "  WARN: headline_line2 starts lowercase ('$H2') — likely split word, auto-fixing" >&2
+    # Merge and re-split at last space before midpoint
+    FULL_HEAD="$H1 $H2"
+    MIDPOINT=$(( ${#FULL_HEAD} / 2 ))
+    # Find last space at or before midpoint
+    H1=$(echo "$FULL_HEAD" | python3 -c "
+import sys
+s = sys.stdin.read().strip()
+mid = len(s) // 2
+idx = s.rfind(' ', 0, mid + 1)
+if idx < 0: idx = s.find(' ')
+print(s[:idx] if idx >= 0 else s)
+")
+    H2=$(echo "$FULL_HEAD" | python3 -c "
+import sys
+s = sys.stdin.read().strip()
+mid = len(s) // 2
+idx = s.rfind(' ', 0, mid + 1)
+if idx < 0: idx = s.find(' ')
+print(s[idx+1:] if idx >= 0 else '')
+")
+    echo "  Auto-fixed headlines: '$H1' / '$H2'" >&2
+  fi
+
   echo "  Draft: $SLUG (${#DRAFT_HTML} chars), template: $TEMPLATE" >&2
 
   # 8. Save draft to file
