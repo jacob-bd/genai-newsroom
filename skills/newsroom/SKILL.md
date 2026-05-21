@@ -346,6 +346,15 @@ python3 ~/.alef-agent/workspace/newsroom/scripts/telegram_edit.py \
 
 **If Jacob says "approved", "post live", or equivalent via text:** Execute Phase 3 manually using `--copy-from-chat` (same as before). The callback handler has not been triggered in this case.
 
+**Custom Headline flow (ForceReply):**
+When Jacob taps ✏️ Custom Headline in the Edit menu, the bot sends a ForceReply prompt asking for `Line1 | Line2`. Jacob's reply arrives here as a regular message. When you see a message in this format with a `|` separator AND `newsroom_pending.json` has `"awaiting_custom_headline": true` for any story:
+1. Parse: `h1 = text before |`, `h2 = text after |` (trimmed)
+2. Validate: neither part starts with lowercase (split-word guard)
+3. Re-render using `render.mjs` with the current template from `story["current_template"]` (default: `dark-editorial`)
+4. Update pending.json: `headline_line1`, `headline_line2`, `template_headline = h1 + " " + h2`, clear `awaiting_custom_headline`
+5. Push updated image via `telegram_edit.py --image`
+6. Restore EDIT_KEYBOARD via `telegram_edit.py` (test channel auto-attaches it)
+
 ### Gate: Phase 2 Complete (before Phase 3)
 - [ ] All requested edits applied (via button or manual telegram_edit.py)
 - [ ] newsroom_pending.json updated if draft_path changed
