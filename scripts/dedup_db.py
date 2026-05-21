@@ -35,9 +35,9 @@ from urllib.parse import urlparse, urlunparse
 # ── Paths ────────────────────────────────────────────────────────────
 WORKSPACE = Path(os.environ.get("OPENCLAW_WORKSPACE",
                                 os.path.expanduser("~/.alef-agent/workspace")))
-DB_PATH = WORKSPACE / "memory" / "news_dedup.db"
-NEWS_LOG = WORKSPACE / "memory" / "news_log.md"
-SCANNER_PRESENTED = WORKSPACE / "memory" / "scanner_presented.md"
+DB_PATH = WORKSPACE / "newsroom" / "data" / "news_dedup.db"
+NEWS_LOG = WORKSPACE / "newsroom" / "data" / "news_log.md"
+SCANNER_PRESENTED = WORKSPACE / "newsroom" / "data" / "scanner_presented.md"
 
 
 # ── Entity Aliases (for channel history search) ──────────────────────

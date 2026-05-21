@@ -36,8 +36,8 @@ from pathlib import Path
 import requests
 
 WORKSPACE = Path(os.path.expanduser("~/.alef-agent/workspace"))
-PENDING_FILE = WORKSPACE / "memory/newsroom_pending.json"
-WHITEBOARD = WORKSPACE / "memory/newsroom_whiteboard.md"
+PENDING_FILE = WORKSPACE / "newsroom/data/newsroom_pending.json"
+WHITEBOARD = WORKSPACE / "newsroom/data/newsroom_whiteboard.md"
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 UPDATE_GROUP = "-1003682312998"
 TEST_CHAT = "-1003889167143"
@@ -184,7 +184,7 @@ def main():
 
     # Post to test channel
     cmd = [
-        "python3", str(WORKSPACE / "scripts/telegram_post.py"),
+        "python3", str(WORKSPACE / "newsroom/scripts/telegram_post.py"),
         "--channel", "test",
         "--image", args.image,
         "--file", args.draft,

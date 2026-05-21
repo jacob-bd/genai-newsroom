@@ -19,8 +19,8 @@ from datetime import datetime
 
 WORKSPACE = Path(os.environ.get("OPENCLAW_WORKSPACE",
                                 os.path.expanduser("~/.alef-agent/workspace")))
-DECISIONS_PATH = WORKSPACE / "memory" / "editorial_decisions.md"
-PROFILE_PATH = WORKSPACE / "memory" / "editorial_profile.md"
+DECISIONS_PATH = WORKSPACE / "newsroom" / "data" / "editorial_decisions.md"
+PROFILE_PATH = WORKSPACE / "newsroom" / "data" / "editorial_profile.md"
 
 
 def parse_decisions():

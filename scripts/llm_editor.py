@@ -41,7 +41,7 @@ except ImportError:
 # ── Paths (customize to your workspace) ──────────────────────────────
 WORKSPACE = Path(os.environ.get("OPENCLAW_WORKSPACE",
                                 os.path.expanduser("~/.alef-agent/workspace")))
-MEMORY = WORKSPACE / "memory"
+MEMORY = WORKSPACE / "newsroom" / "data"
 EDITORIAL_PROFILE = MEMORY / "editorial_profile.md"
 SCANNER_PRESENTED = MEMORY / "scanner_presented.md"
 NEWS_LOG = MEMORY / "news_log.md"
