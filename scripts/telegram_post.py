@@ -156,7 +156,9 @@ def main():
     if args.draft_mode:
         draft_keyboard = json.dumps({"inline_keyboard": [
             [{"text": "✅ Approve", "callback_data": "nr_approve"},
-             {"text": "🗑 Drop", "callback_data": "nr_drop"}],
+             {"text": "\U0001f5d1 Drop", "callback_data": "nr_drop"}],
+            [{"text": "\U0001f50d Fact Check", "callback_data": "nr_factcheck"},
+             {"text": "\U0001f50e New Source", "callback_data": "nr_newsource"}],
             [{"text": "✏️ Edit", "callback_data": "nr_edit"}],
         ]})
 
