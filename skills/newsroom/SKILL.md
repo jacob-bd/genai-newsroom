@@ -188,7 +188,7 @@ After the draft is complete:
 | **template** | **DEFAULT** — all stories | `news-cards` skill → Puppeteer render (dark-editorial unless specified) |
 | **classic** | Only when Jacob says "use classic" or "use Pillow" | gemcli/gptcli background → Pillow overlay |
 
-Jacob switches mode by saying "use template" or "use template: dark-editorial / hot-pink-split / cyan-drenched". Default is **dark-editorial template** unless Jacob says "use classic" or "use Pillow".
+Default is **dark-editorial template**. Only other option is **classic** (say "use classic" or "use Pillow").
 
 **Category tag taxonomy — always pick the most specific match:**
 
@@ -214,10 +214,7 @@ HOME=/Users/jbd node /Users/jbd/.alef-agent/workspace/newsroom/skills/news-cards
   --output ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>.png
 ```
 - `--highlight` wraps one keyword in hot pink. Optional.
-- For `hot-pink-split` also pass: `--stat-labels "Label 1,Label 2,Label 3"` and `--stat-values "Val1,Val2,Val3"`
-- For `cyan-drenched` also pass: `--date "May 2026"`
 - Output goes directly to `Media/` — no Pillow overlay step needed. Skip Step 4b.
-- Rotation default: dark-editorial → hot-pink-split → cyan-drenched → repeat
 
 If using template mode, skip to Gate: Step 4 Complete after the render succeeds.
 

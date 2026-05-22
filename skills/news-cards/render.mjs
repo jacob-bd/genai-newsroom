@@ -27,7 +27,7 @@ const statValues = getArg('stat-values', 'N/A,N/A,N/A');
 
 if (!headline || !output) {
   console.error('Usage: node render.mjs --template <name> --headline "..." --subline "..." --output <path>');
-  console.error('Templates: dark-editorial, hot-pink-split, cyan-drenched');
+  console.error('Templates: dark-editorial (default), classic');
   process.exit(1);
 }
 
