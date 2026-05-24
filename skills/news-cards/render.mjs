@@ -41,8 +41,13 @@ let html = readFileSync(templatePath, 'utf8');
 
 let headlineHtml = headline;
 if (highlight) {
-  const esc = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  headlineHtml = headline.replace(new RegExp(esc, 'i'), match => `<span class="highlight">${match}</span>`);
+  const words = highlight.split(',').map(w => w.trim()).filter(w => w);
+  let result = headline;
+  for (const word of words) {
+    const esc = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(new RegExp('(' + esc + ')([\'.,!?:;]*)', 'gi'), (_, match, punct) => `<span class="highlight">${match}${punct}</span>`);
+  }
+  headlineHtml = result;
 }
 
 const labels = statLabels.split(',');
@@ -84,8 +89,15 @@ try {
 const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
 const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 720 });
-await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 10000 });
-await page.screenshot({ path: output, type: 'png' });
+await page.setContent(html, { waitUntil: 'networkidle0', timeout: 15000 });
+await page.waitForSelector('.card', { timeout: 5000 });
+// Ensure page captures all content by sizing to content height
+const contentHeight = await page.evaluate(() => {
+  document.body.style.height = Math.max(document.body.scrollHeight, 720) + 'px';
+  return document.body.scrollHeight;
+});
+await page.setViewport({ width: 1280, height: Math.max(contentHeight, 720) });
+await page.screenshot({ path: output, type: 'png', fullPage: true });
 await browser.close();
 
 console.log(`✅ Rendered: ${output}`);

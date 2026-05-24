@@ -153,7 +153,7 @@ Continue directly into drafting unless blocked by stale sources or ambiguity.
 1. Load `jbd-my-voice` — mandatory for every news-related Telegram draft and edit. If unavailable, STOP and notify Jacob.
 2. Draft a Telegram-style news post following `jbd-my-voice` Telegram mode exactly
 3. All post text uses HTML formatting only: `<b>text</b>`, `<a href="URL">anchor</a>`. No Markdown.
-4. Write a background-only image prompt following the Gen AI Spotlight image standard: vivid story-specific scene, not heavy text in image. Also decide the two headline lines (6–8 words total). See context/image-standard.md.
+4. Write a background-only image prompt following the Gen AI Spotlight image standard: vivid story-specific scene, not heavy text in image. Also decide the headline words.
 
 Do not spawn a separate writer sub-agent. Draft in the active backend.
 
@@ -183,12 +183,7 @@ After the draft is complete:
 
 **TWO MODES — Jacob controls which one per story.**
 
-| Mode | When to use | Command |
-|------|-------------|---------|
-| **template** | **DEFAULT** — all stories | `news-cards` skill → Puppeteer render (dark-editorial unless specified) |
-| **classic** | Only when Jacob says "use classic" or "use Pillow" | gemcli/gptcli background → Pillow overlay |
-
-Default is **dark-editorial template**. Only other option is **classic** (say "use classic" or "use Pillow").
+**ONLY dark-editorial template via `render.mjs`.** No other image mode exists. Never use Pillow, never use `news_image_overlay.py`.
 
 **Category tag taxonomy — always pick the most specific match:**
 
@@ -214,77 +209,16 @@ HOME=/Users/jbd node /Users/jbd/.alef-agent/workspace/newsroom/skills/news-cards
   --output ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>.png
 ```
 - `--highlight` wraps one keyword in hot pink. Optional.
-- Output goes directly to `Media/` — no Pillow overlay step needed. Skip Step 4b.
+- Output goes directly to `newsroom/media/` — one step, done.
 
-If using template mode, skip to Gate: Step 4 Complete after the render succeeds.
+After the render succeeds, proceed to Gate: Step 4 Complete.
 
----
-
-**Classic mode instructions follow (default).**
-
-Images are built in two steps. See `context/image-standard.md` for full spec.
-
-**Prerequisite: Load the appropriate image skill before generating.**
-
-**Primary: gemcli (Gemini)**
-Load `gemini-web-skill` first. This skill contains auth recovery protocols, Chrome session management, and troubleshooting steps needed before running gemcli. If the image generation fails with any auth error, follow the gemini-web-skill's Authentication Error Recovery protocol (run `gemcli login`, retry once).
-
-**Fallback: gptcli (ChatGPT) — use when gemcli fails OR Jacob asks for gptcli**
-Load `gpt-web-skill` first. Use `gptcli image generate` for background generation. Same prompt template, same QA checklist. See `context/image-standard.md` for full fallback instructions.
-
-**🛑 CRITICAL: NEVER run image generation commands in parallel.** Both gemcli and gptcli share a Chrome/CDP session. Running two `image generate` commands simultaneously causes prompt cross-contamination — one story's image overwrites the other's. Always generate images one at a time, sequentially, and verify each before starting the next.
-
-**Step 4a: Generate background (NO text in prompt)**
-
-Write a story-specific 16:9 background prompt — vivid, photorealistic, not heavy text. Use the background-only template from `context/image-standard.md`.
-
-**With gemcli (primary):**
-```bash
-HOME=/Users/jbd /Users/jbd/.alef-agent/workspace/newsroom/scripts/gemcli_image.sh "<BACKGROUND PROMPT>" -o ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>_clean.png
-```
-
-**With gptcli (fallback):**
-```bash
-HOME=/Users/jbd gptcli image generate "<BACKGROUND PROMPT>" -o ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>_clean.png
-```
-
-Background QA before proceeding:
-- [ ] Image generation ran SEQUENTIALLY (no parallel gemcli/gptcli commands)
-- [ ] Scene is story-specific (not generic tech)
-- [ ] No text or letters visible in image
-- [ ] No malformed faces, hands, or objects
-- [ ] Vision-verified: image content matches the story (not a different story's image)
-
-If gemcli fails twice: switch to gptcli fallback automatically — do NOT stop and ask Jacob. If both fail → STOP, notify Jacob.
-
-**Step 4b: Stamp headline overlay with Pillow (NEVER overwrite the clean background)**
-
-After background passes QA, ALWAYS save it as a separate clean file. Apply the overlay to a COPY so the clean original is never modified.
-
-Use `_clean.png` suffix for the original background and `<slug>.png` for the overlaid version:
-
-```bash
-HOME=/Users/jbd python3 /Users/jbd/.alef-agent/workspace/newsroom/scripts/news_image_overlay.py \
-  ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>_clean.png \
-  ~/.alef-agent/workspace/newsroom/media/YYYY-MM-DD_<slug>.png \
-  'Line 1 Text' 'Line 2 Text'
-```
-
-🛑 **DOLLAR SIGN WARNING**: Bash expands `$` in double quotes. If your headline contains a dollar value (e.g., `$200M`, `$2B`), you MUST use single quotes or escape the `$` with `\$`. Example:
-```bash
-  'Anthropic Commits $200M' 'To Gates Foundation'
-```
-If the text contains an apostrophe (e.g., "Altman's"), use: `'Altman'\''s $2B'`
-
-If overlay edits are needed later, always regenerate from the clean background (`_clean.png`), never from the already-overlaid file. This avoids double-overlay artifacts.
-
-Headline rules: 6–8 words total, 3–4 words per line, states the news fact, no em dashes.
 
 ### Gate: Step 4 Complete
-- [ ] Background generated and saved to `workspace/newsroom/media/YYYY-MM-DD_<slug>.png`
-- [ ] Background is story-specific with no text artifacts
-- [ ] Pillow overlay applied — both headline lines visible, colors correct
-- [ ] Text readable at Telegram preview size
+- [ ] Image generated and saved to `workspace/newsroom/media/YYYY-MM-DD_<slug>.png`
+- [ ] Image is story-specific with no text artifacts
+- [ ] Template mode: render.mjs ran, headline and highlight visible on card
+- [ ] Image readable at Telegram preview size
 
 ### Step 5: Post to Test Channel
 
@@ -338,7 +272,7 @@ python3 ~/.alef-agent/workspace/newsroom/scripts/telegram_edit.py \
    The test channel (`--channel test`) **automatically re-attaches the Approve/Edit/Drop keyboard** on every edit. No extra flag needed. To explicitly remove the keyboard, pass `--no-keyboard`.
    All newsroom posts are photo+caption, so `--caption` is always required. Omit only for rare text-only messages.
 2. Update `newsroom_pending.json` `draft_path` field to point to the latest edited file after each manual edit.
-3. Image/media changes: run Step 4b overlay script from `_clean.png`, then `telegram_edit.py --image` (keyboard auto-preserved for test channel).
+3. Image/media changes: re-run `render.mjs` with dark-editorial template, then `telegram_edit.py --image` (keyboard auto-preserved for test channel).
 4. News Update Group: text-only communication (no files, no images).
 
 **If Jacob says "approved", "post live", or equivalent via text:** Execute Phase 3 manually using `--copy-from-chat` (same as before). The callback handler has not been triggered in this case.
@@ -432,17 +366,10 @@ HOME=/Users/jbd python3 ~/.alef-agent/workspace/newsroom/scripts/buffer_push.py 
 
 ## Image Standard
 
-All images use the Gen AI Spotlight two-step pipeline. See `context/image-standard.md` for full spec.
+**ALL stories use dark-editorial template via `render.mjs`.** One command, no Pillow, no background generation needed.
 
-**Summary:**
-1. Generate a clean 16:9 background — story-specific, vivid, not heavy text in image
-   - Primary: gemcli via `gemcli_image.sh` wrapper (load `gemini-web-skill` first)
-   - Fallback: gptcli `image generate` if gemcli fails OR Jacob requests it (load `gpt-web-skill` first)
-   - Auto-switch to fallback after 2 gemcli failures — do not stop to ask
-2. Pillow stamps the headline: two lines, Impact 100pt white, hot pink bar (`#F000E7`) on line 1, cyan bar (`#0CD9EA`) on line 2, drop shadow, left-aligned bottom quarter
-- 6–8 words total, 3–4 per line, states the fact, no em dashes
-- Use logos, brand colors, and recognizable personas when possible
-- QA after overlay: both lines readable, colors correct, background story-relevant
+Classic/Pillow mode has been permanently removed. Do NOT use `news_image_overlay.py`. Do NOT generate background images with gemcli/gptcli for news cards.
+
 
 ---
 
@@ -466,4 +393,4 @@ Before calling `telegram_post.py`, verify every URL in the draft:
 ## Gen AI Spotlight Style Rules
 - Headlines: punchy, snarky, high-energy — no neutral or corporate phrasing
 - No extra blank lines between sections in post body
-- Images: logo-branded, story-relevant; use brand logo overlay on generated images
+- Images: dark-editorial template via render.mjs only — never Pillow overlay

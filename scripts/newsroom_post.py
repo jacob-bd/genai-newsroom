@@ -178,6 +178,14 @@ def main():
         print("SUCCESS: dry-run passed")
         sys.exit(0)
 
+    # Reject duplicate slug already in pending (defense-in-depth)
+    pending = load_pending()
+    for existing in pending.values():
+        if existing.get("slug") == args.slug:
+            existing_id = existing.get("message_id", "?")
+            print(f"ERROR: slug '{args.slug}' already pending (msg_id={existing_id}). Skipping to prevent duplicate.")
+            sys.exit(1)
+
     if not TOKEN:
         print("ERROR: TELEGRAM_BOT_TOKEN not set")
         sys.exit(1)

@@ -13,10 +13,9 @@ set -euo pipefail
 
 ALEF_HOME="${ALEF_HOME:-$HOME/.alef-agent}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export SCRIPT_DIR
 NEWSROOM_CHAT_ID="${NEWSROOM_CHAT_ID:-task:newsroom}"
 DRY_RUN="${DRY_RUN:-false}"
-TEMPLATES=("dark-editorial" "hot-pink-split" "cyan-drenched")
-TEMPLATE_IDX=0
 SUCCESS_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
@@ -91,36 +90,62 @@ while IFS= read -r STORY_JSON; do
   RANK=$(echo "$STORY_JSON" | jq -r '.rank // 0')
   SUMMARY=$(echo "$STORY_JSON" | jq -r '.summary // ""')
   CATEGORY=$(echo "$STORY_JSON" | jq -r '.category // "AI"')
+  SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/-\+/-/g; s/^-//; s/-$//' | cut -c1-50)
 
   echo "" >&2
   echo "━━━ Story #$RANK: $TITLE ━━━" >&2
 
   # 1. Dedup check
-  DEDUP_OUT=$(python3 -c "
-import sys, json
-sys.path.insert(0, '$SCRIPT_DIR')
+  DEDUP_OUT=$(DEDUP_TITLE="$TITLE" DEDUP_URL="$URL" python3 -c "
+import os, sys, json
+sys.path.insert(0, os.environ.get('SCRIPT_DIR', '.'))
+title = os.environ.get('DEDUP_TITLE', '')
+url = os.environ.get('DEDUP_URL', '')
 try:
     from dedup_db import DedupDB
     db = DedupDB()
-    results = db.search('$(echo "$TITLE" | sed "s/'/\\\\'/g")', limit=3)
-    # Check for exact or near-duplicate in published posts
+    results = db.search(title, limit=3)
     for r in results:
         if r.get('status') == 'published':
             print('DUPLICATE: ' + r.get('title', ''))
             sys.exit(0)
-    # Also check by URL
-    if db.check_url('$URL'):
+    if db.check_url(url):
         print('DUPLICATE_URL')
         sys.exit(0)
     print('CLEAN')
 except ImportError:
-    print('CLEAN')  # If dedup_db not available, proceed
-except Exception as e:
-    print('CLEAN')  # On error, proceed cautiously
+    print('CLEAN')
+except Exception:
+    print('CLEAN')
 " 2>/dev/null || echo "CLEAN")
 
   if echo "$DEDUP_OUT" | grep -q "DUPLICATE"; then
     echo "  SKIP: duplicate detected — $DEDUP_OUT" >&2
+    SKIP_COUNT=$((SKIP_COUNT + 1))
+    continue
+  fi
+
+  # 1b. Check newsroom_pending.json for same slug (prevents double-post within same run)
+  PENDING_SLUG_CHECK=$(python3 -c "
+import json, sys, os
+pending_path = os.path.expanduser('~/.alef-agent/workspace/newsroom/data/newsroom_pending.json')
+slug = '$SLUG'
+try:
+    with open(pending_path) as f:
+        pending = json.load(f)
+    for entry in pending.values():
+        if entry.get('slug') == slug:
+            print('DUPLICATE_PENDING:' + str(entry.get('message_id', '?')))
+            sys.exit(0)
+    print('CLEAN')
+except FileNotFoundError:
+    print('CLEAN')
+except Exception:
+    print('CLEAN')
+" 2>/dev/null || echo "CLEAN")
+
+  if echo "$PENDING_SLUG_CHECK" | grep -q "DUPLICATE_PENDING"; then
+    echo "  SKIP: slug '$SLUG' already in pending — $PENDING_SLUG_CHECK" >&2
     SKIP_COUNT=$((SKIP_COUNT + 1))
     continue
   fi
@@ -143,20 +168,21 @@ print('$SUMMARY')
 " 2>/dev/null || echo "$SUMMARY")
 
   # 3. Check prior coverage for callback weaving
-  RECENT_COVERAGE=$(python3 -c "
-import sys, json
-sys.path.insert(0, '$SCRIPT_DIR')
+  RECENT_COVERAGE=$(DEDUP_TITLE="$TITLE" python3 -c "
+import os, sys, json
+sys.path.insert(0, os.environ.get('SCRIPT_DIR', '.'))
+title = os.environ.get('DEDUP_TITLE', '')
 try:
     from dedup_db import DedupDB
     db = DedupDB()
-    results = db.search('$(echo "$TITLE" | sed "s/'/\\\\'/g")', limit=5)
+    results = db.search(title, limit=5)
     published = [r for r in results if r.get('status') == 'published' and r.get('telegram_url')]
     if published:
         for p in published[:3]:
             print(f\"- {p.get('title', 'N/A')} ({p.get('telegram_url', 'N/A')})\")
     else:
         print('None')
-except:
+except Exception:
     print('None')
 " 2>/dev/null || echo "None")
 
@@ -195,7 +221,7 @@ Then return ONLY valid JSON (no markdown fences, no explanation):
   \"headline_line2\": \"3-4 words for image line 2\",
   \"emoji\": \"single story-appropriate emoji\",
   \"category\": \"AI / SUBCATEGORY\",
-  \"template_highlight\": \"one word or short phrase to highlight in hot pink — MUST be an exact substring of headline_line1 or headline_line2, not from the body text\",
+  \"template_highlight\": \"2-3 key words or phrases that capture the essence of the story, comma-separated (e.g. \\\"OpenAI,IPO\\\", \\\"Karpathy,Anthropic\\\", \\\"\$355M,Modal\\\") — each MUST be an exact substring of headline_line1 or headline_line2. Pick the most newsworthy nouns: company names, dollar amounts, model names, action verbs. NOT generic words like 'new', 'AI', 'says'.\",
   \"subline\": \"short subline for the news card\"
 }"
 

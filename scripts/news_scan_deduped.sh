@@ -545,11 +545,7 @@ if [ "$LLM_SUCCESS" = true ] && [ -s "$PICKS_FILE" ] && [ "$NO_LLM" = false ]; t
     echo "Running editorial council on $PICKS_COUNT stories..."
     COUNCIL_OUT=$(bash "$SCRIPT_DIR/editorial_council.sh" "$PICKS_FILE" \
       2>/tmp/council_${USER}.log) || true
-    COUNCIL_COUNT=$(echo "$COUNCIL_OUT" | python3 -c "
-import sys
-lines = [l.strip() for l in sys.stdin if l.strip()]
-print(len(lines))
-" 2>/dev/null || echo 0)
+    COUNCIL_COUNT=$(echo "$COUNCIL_OUT" | grep -c . 2>/dev/null || echo 0)
     echo "  Council approved $COUNCIL_COUNT stories for drafting"
 
     # Log council output for debugging
@@ -561,18 +557,66 @@ print(len(lines))
       # Post council selection summary to newsroom group (-1003682312998)
       export COUNCIL_OUT
       NOTIFICATION_TEXT=$(python3 <<'EOF'
-import sys, os
+import sys, os, json
+
+votes_path = f"/tmp/council_votes_{os.environ.get('USER', 'user')}.json"
 council_out = os.environ.get("COUNCIL_OUT", "")
-lines = [l.strip().split('|') for l in council_out.splitlines() if l.strip()]
-output = ["🏛️ <b>Editorial Council Selections</b>\n\nApproved <b>%d</b> stories and sent them to auto-draft:\n" % len(lines)]
-for idx, parts in enumerate(lines, 1):
-    if len(parts) >= 3:
-        title = parts[1]
-        url = parts[2]
-        source = parts[3]
-        cat = parts[4] if len(parts) > 4 else "AI"
-        output.append(f"{idx}. <b>{title}</b>\n   🔗 <a href=\"{url}\">{source}</a> | <code>{cat}</code>\n")
-output.append("🚀 Auto-drafting and card rendering initiated...")
+
+approved_stories = []
+for line in council_out.splitlines():
+    line = line.strip()
+    if not line: continue
+    try:
+        approved_stories.append(json.loads(line))
+    except (json.JSONDecodeError, ValueError): pass
+
+votes_data = {}
+try:
+    with open(votes_path) as vf:
+        votes_data = json.load(vf)
+except (OSError, json.JSONDecodeError): pass
+
+# Normalize votes keys to int once (JSON always deserializes dict keys as str)
+votes = {int(k): v for k, v in votes_data.get('votes', {}).items()}
+all_stories = votes_data.get('stories', {})
+approved_ranks = votes_data.get('approved_ranks', [])
+
+fmt_link = lambda u, s: f'<a href="{u}">{s}</a>' if u else s
+get_vc = lambda r, d: votes.get(r, d)
+
+output = [f"🏛️ <b>Editorial Council</b> — {len(approved_stories)} approved\n"]
+
+if approved_stories:
+    output.append("<b>✅ Approved:</b>")
+    for idx, obj in enumerate(approved_stories, 1):
+        rank = obj.get('rank', 0)
+        title = obj.get('title', '(no title)')
+        url = obj.get('url', '')
+        source = obj.get('source', '')
+        cat = obj.get('category', 'AI')
+        vc = get_vc(rank, '?')
+        vote_str = f" <i>({vc}/3)</i>" if vc != '?' else ""
+        output.append(f"{idx}. <b>{title}</b>{vote_str}\n   🔗 {fmt_link(url, source)} | <code>{cat}</code>")
+    output.append("")
+
+skipped = []
+for rank_key, meta in all_stories.items():
+    rank_int = int(rank_key)
+    if rank_int not in approved_ranks:
+        vc = get_vc(rank_int, 0)
+        skipped.append((vc, rank_int, meta))
+skipped.sort(key=lambda x: (-x[0], x[1]))
+
+if skipped:
+    output.append("<b>⏭ Skipped:</b>")
+    for vc, rank_int, meta in skipped:
+        title = meta.get('title', '(no title)')
+        url = meta.get('url', '')
+        source = meta.get('source', '')
+        vote_str = f"({vc}/3)" if vc else "(0/3)"
+        output.append(f"• {title} {vote_str}\n  🔗 {fmt_link(url, source)}")
+
+output.append("\n🚀 Auto-drafting initiated...")
 print("\n".join(output))
 EOF
 )

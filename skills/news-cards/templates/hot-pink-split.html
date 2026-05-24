@@ -4,12 +4,11 @@
 <meta charset="utf-8">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { width: 1280px; height: 720px; overflow: hidden; }
+body { width: 1280px; min-height: 720px; }
 .card {
-  width: 1280px; height: 720px;
+  width: 1280px; min-height: 720px;
   position: relative;
   display: flex; flex-direction: column;
-  overflow: hidden;
 }
 .top-block {
   flex: 1;
@@ -29,7 +28,9 @@ body { width: 1280px; height: 720px; overflow: hidden; }
 }
 .headline {
   font-family: 'Impact', 'Arial Black', sans-serif;
-  font-size: 126px;
+  font-size: 106px;
+  overflow-wrap: break-word;
+  word-break: break-word;
   line-height: 1.05;
   color: #ffffff;
   text-align: center;

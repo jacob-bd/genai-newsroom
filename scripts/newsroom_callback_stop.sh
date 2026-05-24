@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Stop the newsroom callback handler daemon.
 
-PID_FILE="$HOME/.alef-agent/workspace/newsroom/tmp/callback_handler.pid"
+PID_FILE="$HOME/.alef-agent/workspace/newsroom/data/callback_handler.pid"
 
 if [ ! -f "$PID_FILE" ]; then
     echo "No PID file found. Callback handler may not be running."

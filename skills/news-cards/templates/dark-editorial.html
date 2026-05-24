@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { width: 1280px; height: 720px; overflow: hidden; background: #0a0a0f; }
+body { width: 1280px; min-height: 720px; background: #0a0a0f; }
 .card {
-  width: 1280px; height: 720px;
+  width: 1280px; min-height: 720px;
   position: relative;
   background: linear-gradient(160deg, #0a0a0f 0%, #1a0a2e 40%, #0f0f1a 100%);
   display: flex; flex-direction: column; justify-content: center;
@@ -27,12 +27,14 @@ body { width: 1280px; height: 720px; overflow: hidden; background: #0a0a0f; }
 }
 .headline {
   font-family: 'Impact', 'Arial Black', sans-serif;
-  font-size: 106px;
+  font-size: 96px;
   text-transform: uppercase;
   line-height: 0.92;
   color: #ffffff;
   margin-bottom: 22px;
   max-width: 1180px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .headline .highlight { color: #F000E7; }
 .subline {

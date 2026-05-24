@@ -205,7 +205,7 @@ def main():
     parser.add_argument("--no-html", action="store_true", help="Send as plain text (no HTML parsing)")
     parser.add_argument("--keyboard", help="Re-attach inline keyboard as JSON reply_markup (prevents keyboard disappearing on edit)")
     parser.add_argument("--newsroom-keyboard", action="store_true", dest="newsroom_keyboard",
-                        help="Shorthand: re-attach standard newsroom Approve/Edit/Drop keyboard")
+                        help="Shorthand: re-attach standard newsroom Approve/Fact Check/New Source/Edit/Drop keyboard")
     parser.add_argument("--no-keyboard", action="store_true", dest="no_keyboard",
                         help="Explicitly remove keyboard (overrides auto-preserve for test channel)")
     args = parser.parse_args()
@@ -238,7 +238,9 @@ def main():
 
     NEWSROOM_KEYBOARD = {"inline_keyboard": [
         [{"text": "✅ Approve", "callback_data": "nr_approve"},
-         {"text": "🗑 Drop", "callback_data": "nr_drop"}],
+         {"text": "\U0001f5d1 Drop", "callback_data": "nr_drop"}],
+        [{"text": "\U0001f50d Fact Check", "callback_data": "nr_factcheck"},
+         {"text": "\U0001f50e New Source", "callback_data": "nr_newsource"}],
         [{"text": "✏️ Edit", "callback_data": "nr_edit"}],
     ]}
 

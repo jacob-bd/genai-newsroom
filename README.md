@@ -1,4 +1,4 @@
-# Gen AI Spotlight — Newsroom
+# Gen AI Spotlight - Newsroom
 
 Automated AI news publishing pipeline for [@genaispot](https://t.me/genaispot).
 
@@ -50,11 +50,11 @@ news_scan_deduped.sh
 | `auto_draft.sh` | Draft + image + post to test channel |
 | `newsroom_post.py` | Telegram staging with review keyboard |
 | `dedup_db.py` | SQLite wrapper for `news_dedup.db` |
-| `nr_.py` | Inline keyboard callback handler (in `../callbacks/`) |
+| `nr_.py` | Inline keyboard callback handler (`callbacks/nr_.py`, symlinked from `../callbacks/nr_.py`) |
 
 ## Callback Handler
 
-`nr_.py` lives in `~/.alef-agent/workspace/callbacks/` (required by Alef Agent daemon). All its data paths point into this `newsroom/` directory.
+`nr_.py` is tracked at `newsroom/callbacks/nr_.py`. Alef Agent still invokes `~/.alef-agent/workspace/callbacks/nr_.py`, which should be a symlink to the tracked file. All its data paths point into this `newsroom/` directory.
 
 ## Setup
 

@@ -47,8 +47,8 @@ HOME=/Users/jbd node /Users/jbd/.alef-agent/workspace/skills/news-cards/render.m
 |------|----------|-------------|
 | `--template` | Yes | Template name: `dark-editorial`, `hot-pink-split`, `cyan-drenched` |
 | `--category` | Yes | Top label (e.g., "Breaking / Funding", "Open Source") |
-| `--headline` | Yes | Main headline text (uppercase applied automatically) |
-| `--highlight` | No | Word(s) in headline to highlight in pink |
+| `--headline` | Yes | Main headline text (uppercase applied automatically). Up to ~12 words, though 6-8 is ideal. |
+| `--highlight` | No | Comma-separated key words to highlight in brand pink. Highlight enough that pink is visible — if headline is 8+ words, use 2-4 highlights spread across it. A single pink word in a long headline gets lost. Pick the nouns that carry the story (company names, products, key concepts). Example: `--highlight "Meta,WhatsApp,Encryption"` |
 | `--subline` | Yes | Supporting text below headline |
 | `--output` | Yes | Output PNG path |
 | `--source` | No | Source name (default: "Gen AI Spotlight") |

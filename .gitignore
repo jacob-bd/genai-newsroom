@@ -8,6 +8,8 @@ data/newsroom_whiteboard.md
 data/last_scan_candidates.txt
 data/channel_stats.json
 data/github_trending_state.json
+data/*.log
+data/last_scan_github.txt
 
 # Generated media and drafts
 media/
@@ -17,10 +19,13 @@ tmp/
 __pycache__/
 *.pyc
 *.pyo
+*.DEPRECATED.py
 .venv/
 
 # Node
 skills/news-cards/node_modules/
+skills/news-cards/test-*.mjs
+skills/news-cards/test-*.png
 
 # Secrets / local env
 .env

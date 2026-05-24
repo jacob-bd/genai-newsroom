@@ -16,7 +16,7 @@ API_TOKEN_FILE="$ALEF_HOME/data/api-token"
 API_BASE="http://127.0.0.1:3141"
 NEWSROOM_CHAT_ID="${NEWSROOM_CHAT_ID:-task:newsroom}"
 POLL_TIMEOUT="${COUNCIL_POLL_TIMEOUT:-600}"  # 10 min — handles queued → running → completed
-POLL_INTERVAL=15
+POLL_INTERVAL=5
 DRY_RUN="${DRY_RUN:-false}"
 MAX_APPROVED=5
 
@@ -279,7 +279,7 @@ for AGENT_ID in "${AGENTS[@]}"; do
 done
 
 python3 -c "
-import json, re, sys
+import json, re, sys, os
 
 MAX_APPROVED = $MAX_APPROVED
 PICKS_FILE = '$PICKS_FILE'
@@ -332,16 +332,32 @@ approved = sorted(
 approved_ranks = [r for r, _ in approved]
 print(f'  majority approved: {approved_ranks} (from votes: {dict(votes)})', file=sys.stderr)
 
-# Output approved stories as JSON lines to stdout
-for line in open(PICKS_FILE):
-    line = line.strip()
-    if not line:
-        continue
+_stories_meta = {}
+_approved_output = []
+for _ln in open(PICKS_FILE):
+    _ln = _ln.strip()
+    if not _ln: continue
     try:
-        obj = json.loads(line)
-        if obj.get('rank') in approved_ranks:
-            print(json.dumps(obj))
-    except (json.JSONDecodeError, KeyError):
-        pass
+        _o = json.loads(_ln)
+        _r = _o.get('rank')
+        if _r:
+            _stories_meta[_r] = {
+                'title': _o.get('title', ''),
+                'url': _o.get('url', ''),
+                'source': _o.get('source', ''),
+                'category': _o.get('category', 'AI'),
+            }
+            if _r in approved_ranks:
+                _approved_output.append(json.dumps(_o))
+    except (json.JSONDecodeError, ValueError): pass
+_votes_path = f\"/tmp/council_votes_{os.environ.get('USER', 'user')}.json\"
+try:
+    with open(_votes_path, 'w') as _vf:
+        json.dump({'votes': votes, 'approved_ranks': approved_ranks, 'stories': _stories_meta}, _vf)
+except OSError as _e:
+    print(f'  warn: could not write votes file: {_e}', file=sys.stderr)
+
+for _out in _approved_output:
+    print(_out)
 " 2>&2
 

@@ -2308,3 +2308,167 @@
 [2026-05-20T23:18:57] Mark Zuckerberg’s Meta kicks off major bloodbath with 8,000 layoffs | https://www.reddit.com/r/singularity/comments/1tiosgg/mark_zuckerbergs_meta_kicks_off_major_bloodbath/
 [2026-05-20T23:18:57] A city at the center of an AI data center frenzy just voted to ban them | https://www.businessinsider.com/ai-data-center-ban-opposition-new-jersey-2026-5
 [2026-05-20T23:18:57] ArXiv will ban researchers for a year if generative AI not kept in check | https://news.google.com/rss/articles/CBMirAFBVV95cUxOeGktUDU0cmZMQ2dwRDV0NjlTeXhaM1VVR3lXZ0xrd21OZnM0ZHc3ZkRlNnU2TThkcDJ3N1dLblZvM01vNEIzLVZSYzdZLVFyYWdranJxdGlVMWtUZGhJTU5sdmE4aUUwbHNKMGtNRnZRelIyNS1ERTRHSHFpb2QzU0hDc3hNQ3VXRXcwb2R1ZXZoUEhMaEMtUDRvTEVrQ2VTZEo0NTVlOEtZOXFo?oc=5
+
+## 2026-05-21
+
+[2026-05-21T07:55:32] Nvidia no longer reports sales of graphics solutions as a separate segment — posts eye-watering $81.6 billion Q1 profit thanks to AI boom | https://www.tomshardware.com/tech-industry/artificial-intelligence/nvidia-no-longer-reports-sales-of-graphics-solutions-as-a-separate-segment-posts-eye-watering-usd81-6-billion-q1-profit-thanks-to-ai-boom
+[2026-05-21T07:55:32] An OpenAI model has disproved a central conjecture in discrete geometry | https://openai.com/index/model-disproves-discrete-geometry-conjecture/
+[2026-05-21T07:55:32] ASML CEO says Elon Musk is 'very serious' about TeraFab chipmaking megaproject, confirms direct talks — Musk targets $119 billion Texas semiconductor facility | https://www.tomshardware.com/tech-industry/asml-ceo-confirms-direct-talks-with-elon-musk-about-terafab
+[2026-05-21T07:55:32] Kemira and CuspAI used generative AI to produce over 5,000 novel materials for PFAS removal | https://di.gg/ai/9f61uotr
+[2026-05-21T07:55:32] Google officially announces that ads will be included in AI Mode search results | https://blog.google/products/ads-commerce/google-marketing-live-search-ads/
+[2026-05-21T07:55:32] 1Password secures coding agents with new OpenAI Codex integration | https://nerds.xyz/2026/05/1password-openai-codex-security/
+[2026-05-21T07:55:32] CohereLabs/command-a-plus-05-2026-bf16 · Hugging Face | https://huggingface.co/CohereLabs/command-a-plus-05-2026-bf16
+[2026-05-21T07:56:22] An OpenAI model has disproved a central conjecture in discrete geometry | https://openai.com/index/model-disproves-discrete-geometry-conjecture/
+[2026-05-21T07:56:22] ASML CEO says Elon Musk is 'very serious' about TeraFab chipmaking megaproject | https://www.tomshardware.com/tech-industry/asml-ceo-confirms-direct-talks-with-elon-musk-about-terafab
+[2026-05-21T07:56:22] Kemira and CuspAI used generative AI to produce over 5,000 novel materials for PFAS removal | https://di.gg/ai/9f61uotr
+[2026-05-21T07:56:22] Microsoft storms RAMPART, adds Clarity to agentic AI safety | https://www.theregister.com/security/2026/05/21/microsoft-open-sources-agentic-ai-safety-tools/5243822
+[2026-05-21T07:56:22] 1Password secures coding agents with new OpenAI Codex integration | https://nerds.xyz/2026/05/1password-openai-codex-security/
+[2026-05-21T07:56:22] CohereLabs/command-a-plus-05-2026-bf16 · Hugging Face | https://huggingface.co/CohereLabs/command-a-plus-05-2026-bf16
+[2026-05-21T07:56:22] Intel leans on LPDDR5X to dodge global HBM crisis | https://www.tomshardware.com/pc-components/gpus/pcb-shots-appear-of-intels-crescent-island-revealing-a-single-gpu-setup-and-pads-for-20-lpddr5x-modules
+[2026-05-21T07:59:28] Anthropic projects $10.9 billion June quarter revenue and its first $559 million operating profit | https://di.gg/ai/otvjcimk
+[2026-05-21T07:59:28] OpenAI general purpose model had a breakthrough on famous 80 year old Erdos problem | https://www.reddit.com/r/singularity/comments/1tiwa59/openai_general_purpose_model_had_a_breakthrough/
+[2026-05-21T07:59:28] Nvidia’s Vera chip is the US$200 billion bet Jensen Huang doesn’t want you to overlook | https://www.artificialintelligence-news.com/news/nvidia-vera-chip-200-billion-market/
+[2026-05-21T07:59:28] UK.gov hikes health AI tender by 400% – and hundreds of millions – after a chat with suppliers | https://www.theregister.com/ai-ml/2026/05/21/ukgov-hikes-health-ai-tender-by-400-and-hundreds-of-millions-after-a-chat-with-suppliers/5243377
+[2026-05-21T07:59:28] A Hacker Group Is Poisoning Open Source Code at an Unprecedented Scale | https://www.wired.com/story/teampcp-software-supply-chain-attack-spree-github/
+[2026-05-21T07:59:28] Sam Altman Offers YC Founders $2 Million in OpenAI Tokens For Equity | https://www.theinformation.com/briefings/sam-altman-offers-yc-founders-2-million-openai-tokens-equity
+[2026-05-21T07:59:28] Move to backend sampling for MTP draft path by gaugarg-nv · Pull Request #23287 · ggml-org/llama.cpp | https://github.com/ggml-org/llama.cpp/pull/23287
+[2026-05-21T07:59:28] SEIA: AI is fueling a massive US energy storage boom | https://electrek.co/2026/05/20/seia-ai-is-fueling-a-massive-us-energy-storage-boom/
+[2026-05-21T08:06:23] Anthropic is officially set to be profitable as of Q2 2026 | https://www.wsj.com/tech/ai/mind-blowing-growth-is-about-to-propel-anthropic-into-its-first-profitable-quarter-7edbf2f4
+[2026-05-21T08:06:23] Meta lays off thousands of employees to offset AI investments | https://www.theverge.com/tech/935163/meta-layoffs-ai-investment-offset-memo
+[2026-05-21T08:06:23] Anthropic is expanding to Colossus2. Will use GB200 | https://twitter.com/nottombrown/status/2057194829986300375
+[2026-05-21T08:06:23] Patch window is officially dead as AI finds bugs faster than humans can squash them | https://www.techradar.com/pro/patch-window-is-officially-dead-as-ai-finds-bugs-faster-than-humans-can-squash-them
+[2026-05-21T08:06:23] Proposed AI data center denied after massive public pushback | https://www.eastidahonews.com/2026/05/proposed-ai-data-center-in-pocatello-denied-after-massive-public-pushback/
+[2026-05-21T08:06:23] HuggingFace benchmark datasets now let you filter by model size | https://www.reddit.com/r/LocalLLaMA/comments/1tilvit/huggingface_benchmark_datasets_now_let_you_filter/
+[2026-05-21T08:06:23] How AI demand is redefining enterprise infrastructure strategy | https://www.techradar.com/pro/how-ai-demand-is-redefining-enterprise-infrastructure-strategy
+[2026-05-21T09:01:20] CoreWeave-Core Scientific deal pushes AI merger tally over $65 billion as M&A market thaws | https://finance.yahoo.com/news/coreweave-core-scientific-deal-pushes-ai-merger-tally-over-65-billion-as-ma-market-thaws-152932614.html
+[2026-05-21T09:01:20] Ubisoft confirms new Assassin's Creed, Far Cry, and Ghost Recon games are in the works and will launch by March 2029, alongside the 'first playable Generative AI experience' | https://www.techradar.com/gaming/ubisoft-confirms-new-assassins-creed-far-cry-and-ghost-recon-games-are-in-the-works-and-will-launch-by-march-2029-alongside-the-first-playable-generative-ai-experience
+[2026-05-21T09:01:20] Workday brings AI agents to IT service management and travel | https://siliconangle.com/2026/05/21/workday-brings-ai-agents-service-management-travel/
+[2026-05-21T09:01:20] Apple adds AI smarts to Voice Control, VoiceOver and Magnifier ahead of Accessibility Day | https://www.theregister.com/ai-ml/2026/05/21/apple-adds-ai-smarts-to-voice-control-voiceover-and-magnifier-ahead-of-accessibility-day/5243594
+[2026-05-21T09:01:20] HalBench: I built a custom sycophancy and hallucination benchmark and tested 4 frontier models | https://www.reddit.com/r/LocalLLaMA/comments/1tizvih/halbench_i_built_a_custom_sycophancy_and/
+[2026-05-21T09:01:20] AMD Ryzen AI Halo PC will cost 3999$ with 128GB memory on board | https://videocardz.com/newz/amd-ryzen-ai-halo-pc-will-cost-3999-with-128gb-memory-on-board
+[2026-05-21T12:01:22] Hark raises $700M Series A for its secretive “universal” AI interface | https://techcrunch.com/2026/05/21/hark-raises-700m-series-a-for-its-secretive-universal-ai-interface/
+[2026-05-21T12:01:22] Samsung reportedly set to distribute up to $26.6 billion to staff in AI-driven semiconductor bonuses | https://www.tomshardware.com/tech-industry/big-tech/samsung-reportedly-set-to-distribute-up-to-usd26-6-billion-to-staff-in-ai-driven-semiconductor-bonuses-after-last-minute-union-deal-average-payouts-could-approach-usd400-000-per-chip-employee
+[2026-05-21T12:01:22] US Cyber Command races to deploy AI on top-secret networks | https://the-decoder.com/us-cyber-command-races-to-deploy-ai-on-top-secret-networks/
+[2026-05-21T12:01:22] OpenAI could file confidential IPO paperwork within days | https://the-decoder.com/openai-could-file-confidential-ipo-paperwork-within-days/
+[2026-05-21T12:01:22] AMD Powers Next-Generation Agent Computers with New Ryzen AI Halo Developer Platform | https://www.amd.com/en/blogs/2026/amd-powers-next-generation-agent-computers-with-new-ryzen-ai-hal.html
+[2026-05-21T12:01:22] Kore.ai launches Artemis AI agent platform, expands challenge to Microsoft and Salesforce | https://venturebeat.com/technology/kore-ai-launches-artemis-ai-agent-platform-expands-challenge-to-microsoft-and-salesforce
+[2026-05-21T15:02:04] Pentagon Tests Rival AI Models in Race to Replace Anthropic | https://news.google.com/rss/articles/CBMirwFBVV95cUxNNVBwS1l3X3pMenRRUDhCN1pPcERhMFowQ0t4dnVEV29fWFNCa0hXSjVCMHduUFFUZ3B6MmJMRGhuVDBxOTZWUEdGaDdpQXVpN1EwWktQdmFHT21uV1R1Uk5mWE9aeEE3akx2OGhidzBpUHhmOWtlVG42RExsRWM1bjkta1dFVHlETHJrUDZvR3JnVVdUQjRwNG4wRUxrWlRGeHRkLS1RbExoZFFveW9R?oc=5
+[2026-05-21T15:02:04] IBM positions itself as an ecosystem conductor as sovereign AI pressures mount | https://siliconangle.com/2026/05/21/hybrid-ai-orchestration-defines-new-ibm-operating-model-ibmthink/
+[2026-05-21T15:02:04] Dell launches record-shattering server with 9.8PB of flash storage in just 2U | https://www.techradar.com/pro/dell-launches-record-shattering-server-with-9-8pb-of-flash-storage-in-just-2u-paving-the-way-for-massive-usd75-million-200pb-ai-data-center-racks
+[2026-05-21T15:02:04] Bugcrowd launches reinforcement learning environments to train AI on real software vulnerabilities | https://siliconangle.com/2026/05/21/bugcrowd-launches-reinforcement-learning-environments-train-ai-real-software-vulnerabilities/
+[2026-05-21T15:02:04] Launch HN: Runtime (YC P26) – Sandboxed coding agents for everyone on a team | https://www.runtm.com/
+[2026-05-21T15:02:04] Nvidia tells users to update GPU drivers now or face possible attack | https://www.techradar.com/pro/security/nvidia-tells-users-to-update-gpu-drivers-now-or-face-possible-attack-heres-what-we-know
+[2026-05-21T15:02:04] Zendesk expands AI agents across ChatGPT, Gemini, voice and messaging | https://www.techradar.com/pro/zendesk-expands-ai-agents-across-chatgpt-gemini-voice-and-messaging
+[2026-05-21T18:02:12] Top mathematician Timothy Gowers: "AI has now solved a major open problem ... one that many mathematicians had tried." | https://www.reddit.com/r/ChatGPT/comments/1tjgf8g/top_mathematician_timothy_gowers_ai_has_now/
+[2026-05-21T18:02:12] Nvidia's memory costs soar 485%, latest AI systems now cost $7.8 million to build | https://www.tomshardware.com/tech-industry/artificial-intelligence/nvidias-memory-costs-soar-485-percent-latest-ai-systems-now-cost-usd7-8-million-to-build-memory-now-comprises-25-percent-of-the-total-cost-rubin-gpus-a-mere-usd50-000-apiece
+[2026-05-21T18:02:12] Google checks websites for llms.txt in new agentic browsing audit | https://the-decoder.com/google-tests-websites-for-llms-txt-and-agent-compatibility/
+[2026-05-21T18:02:12] Spotify and Universal Music strike deal allowing fan-made AI covers and remixes | https://techcrunch.com/2026/05/21/spotify-and-universal-music-strike-deal-allowing-fan-made-ai-covers-and-remixes/
+[2026-05-21T18:02:12] A 0.12% parameter add-on gives AI agents the working memory RAG can't | https://venturebeat.com/orchestration/a-0-12-parameter-add-on-gives-ai-agents-the-working-memory-rag-cant
+[2026-05-21T18:02:12] LatitudeGames/Equinox-31B · Hugging Face | https://huggingface.co/LatitudeGames/Equinox-31B
+[2026-05-21T18:02:12] AI Security Institute published a report on May 21, 2026, assessing oversight mechanisms for advanced AI systems | https://di.gg/ai/r0zipz0w
+[2026-05-21T21:02:59] Zscaler acquires Symmetry Systems to extend its AI agent security capabilities | https://siliconangle.com/2026/05/21/zscaler-acquires-symmetry-systems-extend-ai-agent-security-capabilities/
+[2026-05-21T21:02:59] New Anthropic-, Blackstone-backed AI services firm acquires Fractional AI | https://siliconangle.com/2026/05/21/new-anthropic-blackstone-backed-ai-services-firm-acquires-fractional-ai/
+[2026-05-21T21:02:59] Strong demand for agentic AI offerings helps Workday beat expectations and boost its stock price | https://siliconangle.com/2026/05/21/strong-demand-agentic-ai-offerings-helps-workday-beat-expectations-boost-stock-price/
+[2026-05-21T21:02:59] 'Am I OpenAI compatible' - a tool and documentation for unified api signatures in open source AI. | https://www.reddit.com/r/LocalLLaMA/comments/1tjgceg/am_i_openai_compatible_a_tool_and_documentation/
+
+## 2026-05-22
+
+[2026-05-22T06:01:54] Serverless AI infrastructure startup Modal Labs seals $355M funding round | https://siliconangle.com/2026/05/21/serverless-ai-infrastructure-startup-modal-labs-seals-355m-funding-round/
+[2026-05-22T06:01:54] Claude's new constitution - Anthropic | https://www.anthropic.com/news/claude-new-constitution
+[2026-05-22T06:01:54] California to explore possible subsidies for companies that don’t replace workers with AI | https://siliconangle.com/2026/05/21/california-explore-possible-subsidies-companies-dont-replace-workers-ai/
+[2026-05-22T06:01:54] Alibaba just admitted it’s struggling to keep up with rival chipmakers and AI shops | https://www.theregister.com/systems/2026/05/22/alibaba-just-admitted-its-struggling-to-keep-up-with-rival-chipmakers-and-ai-shops/5244665
+[2026-05-22T06:01:54] Google explains how it will infuse ads into AI answers | https://www.theregister.com/ai-ml/2026/05/21/google-explains-how-it-will-infuse-ads-into-ai-answers/5244586
+[2026-05-22T06:01:54] The Gulf’s AI Boom Has an Undersea Cable Problem | https://www.wired.com/story/the-gulfs-ai-boom-has-an-undersea-cable-problem/
+[2026-05-22T09:02:04] OpenAI opens Singapore AI lab as IMDA updates AI framework | https://www.artificialintelligence-news.com/news/openai-singapore-ai-lab-imda-agentic-ai-framework/
+[2026-05-22T09:02:04] IBM Sovereign Core aims to put AI control back in the hands of the enterprise | https://siliconangle.com/2026/05/22/managing-digital-sovereignty-enterprise-ibmthink/
+[2026-05-22T09:02:04] xAI Releases Grok Skills and Updates Tool Calling Responses API | https://www.infoq.com/news/2026/05/xai-grok-skills/?utm_campaign=infoq_content&utm_source=infoq&utm_medium=feed&utm_term=global
+[2026-05-22T09:02:04] China’s AI just mapped its entire renewable energy grid. Here’s why the rest of the world should pay attention | https://www.artificialintelligence-news.com/news/ai-energy-grid-mapping-china/
+[2026-05-22T09:02:04] Figure AI celebrates 200 hours (8 days ~8 hours) of their humanoid robots handling packages | https://www.reddit.com/r/singularity/comments/1tkd0fk/figure_ai_celebrates_200_hours_8_days_8_hours_of/
+[2026-05-22T12:01:05] DeepSeek raises its targeted funding round to $10 billion | https://di.gg/ai/mut3ghzt
+[2026-05-22T12:01:05] California governor signs first US executive order to protect workers from AI job loss | https://the-decoder.com/california-governor-signs-first-us-executive-order-to-protect-workers-from-ai-job-loss/
+[2026-05-22T12:01:05] Microsoft, EY to spend $1 billion on helping customers buy agentic AI | https://www.computerworld.com/article/4176398/microsoft-ey-to-spend-1-billion-on-helping-customers-buy-agentic-ai-2.html
+[2026-05-22T12:01:05] DeepSeek reduces prices for its deepseek-v4-pro API model | https://di.gg/ai/axzmul0l
+[2026-05-22T12:01:05] Launch HN: Superset (YC P26) – IDE for the agents era | https://github.com/superset-sh/superset
+[2026-05-22T12:01:05] Open-source AI is pulling Dell’s entire portfolio into play | https://siliconangle.com/2026/05/22/open-source-ai-agents-drive-dells-agentic-moment-delltechworld/
+[2026-05-22T12:01:05] D&B's database of 642 million businesses was built for humans, not AI agents. So they rebuilt it. | https://venturebeat.com/data/d-and-bs-database-of-642-million-businesses-was-built-for-humans-not-ai-agents-so-they-rebuilt-it
+[2026-05-22T12:01:05] KVCache.ai launches open-source web-based KV Cache Size Calculator | https://di.gg/ai/yuusdejg
+[2026-05-22T15:01:12] Anthropic, Microsoft in talks for AI chip deal after $5 billion investment | https://www.cnbc.com/2026/05/21/anthropic-microsoft-maia-200-ai-chip.html
+[2026-05-22T15:01:12] Analyst says Nvidia poised to capture two-thirds of the x86 server CPU market from Intel and AMD | https://www.tomshardware.com/pc-components/cpus/analyst-says-nvidia-poised-to-capture-two-thirds-of-the-x86-server-cpu-market-from-intel-and-amd-with-expected-usd20-billion-in-revenue-nvidia-is-already-on-track-to-deliver-4-million-vera-cpus-in-fy2027
+[2026-05-22T15:01:12] DeepSeek Announces Permanent Price Cut of 75% after Promotion Period | https://www.reddit.com/r/singularity/comments/1tkj8l8/deepseek_announces_permanent_price_cut_of_75/
+[2026-05-22T15:01:12] OpenBMB presents the model BitCPM-CANN 1.58 bit | https://www.reddit.com/r/LocalLLaMA/comments/1tkjpsh/openbmb_presents_the_model_bitcpmcann_158_bit/
+[2026-05-22T15:01:12] BeeLlama v0.2.0 – major DFlash update | https://www.reddit.com/r/LocalLLaMA/comments/1tkpz2y/beellama_v020_major_dflash_update_single_rtx_3090/
+[2026-05-22T15:01:12] Open source Kanban desktop app that runs parallel agents on every card | https://www.kanbots.dev/
+[2026-05-22T15:01:12] OpenAI Appshots turn any Mac window into context for Codex | https://the-decoder.com/openai-appshots-turn-any-mac-window-into-context-for-codex/
+[2026-05-22T15:01:12] New Release of ROCm based MLX LLM Engine - lemon-mlx-engine | https://www.reddit.com/r/LocalLLaMA/comments/1tkbupt/new_release_of_rocm_based_mlx_llm_engine/
+[2026-05-22T18:01:30] Hyperagent from the team behind Airtable launches a cloud platform for autonomous AI agents | https://di.gg/ai/bj72oqvg
+[2026-05-22T18:01:30] MIT CSAIL PhD student Ryan Bahlous-Boldi introduces Vector Policy Optimization | https://di.gg/ai/5kr8v2uo
+[2026-05-22T18:01:30] Domain-Camouflaged Injection Attacks Evade Detection in Multi-Agent LLM Systems | https://arxiv.org/abs/2605.22001
+[2026-05-22T18:01:30] Models.dev: open-source database of AI model specs, pricing, and capabilities | https://github.com/anomalyco/models.dev
+[2026-05-22T18:01:30] Thomas Dimson, who worked on OpenAI's Sora video generation model, announced his departure | https://di.gg/ai/93mrk7k4
+[2026-05-22T18:01:30] Joseph Suarez challenges Reflection AI's open-source status | https://di.gg/ai/8zk9o0d8
+[2026-05-22T21:01:59] OpenAI reports its internal general-purpose reasoning model found new point configurations for the Erdős planar unit distance problem that outperform prior square-grid optima | https://di.gg/ai/f627cdfc-5fc4-45d3-8b05-d10a6428a671
+[2026-05-22T21:01:59] DeepSeek makes its 75% discount on the DeepSeek-V4-Pro API permanent | https://di.gg/ai/0zzxfag9
+[2026-05-22T21:01:59] Anthropic has operated Mythos Preview and Mythos-class models internally for three months | https://di.gg/ai/gcugcvm2
+[2026-05-22T21:01:59] Minor edits to AI skills can make agents go rogue | https://www.theregister.com/ai-ml/2026/05/22/minor-edits-to-ai-skills-can-make-agents-go-rogue/5245413
+[2026-05-22T21:01:59] A Russian speaker and jailbroken Gemini went on a hacking spree and emptied at least one MAGA victim's crypto wallets | https://www.theregister.com/cyber-crime/2026/05/22/jailbroken-gemini-helped-russian-speaking-fraudster-target-maga-crypto-users/5245390
+[2026-05-22T21:01:59] Gemini app for Mac adding ‘Spark’ agent and voice control this summer | https://9to5google.com/2026/05/22/gemini-mac-spark-control-summer/
+[2026-05-22T21:01:59] China’s DeepSeek releases new AI models it claims ‘nearly’ match up to OpenAI, Anthropic tech | https://news.google.com/rss/articles/CBMiiANBVV95cUxPVVJIQ2lGTEFwYXlXVGpZMjR1MUttYUZVaURWLTBqcFlBOEF6M0JBeGxrOWhzNnRzQ0JkSnJuQTRiMjRnWlFoU2ZmdE9pTkNUWjBEclp5ZkRORzlLZThtWDhrZnlCekNxV2tXb2FkZnlacVV3Uk9BUlpjNjIxLXFYLThjWDZWRFFvZ2tKZXlhQVpEVVVObzVPX3dZYnk0QmlUa2xUN0gwVUJJVmctLUNDSGxGT2c0UFZqM3B1ZWEyd05sMjVlUkIxY2VnM2VIZ00yNV81c2Y0NkVndTNyU09EVUQ2N3hCdk1JYmR1WkxDT3gwZkRSUkJUNm1YNFE3Q1ZSMFdtejR6dmx0UGRyUGVFU1BUSVpOMVg5SGJ1MFpjbzBFVGlhUVZrMzhWRDNIamUxbk5fUE1zOE5VTmFRNjNsREZSYWNrZDJOZUw3OEFwNTNRTE42T1BacC1HUXhzUmR5c0J6MERRSnZ3ZmtiYkVpTWpfaEF3QmQ5bmhtc0NMQ0hZQjJUeVB0Uw?oc=5
+
+## 2026-05-23
+
+[2026-05-23T06:02:04] Anthropic warns Claude Mythos Preview finds bugs faster than developers can patch them | https://the-decoder.com/anthropic-warns-claude-mythos-preview-finds-bugs-faster-than-developers-can-patch-them/
+[2026-05-23T06:02:04] NVIDIA Removes Gaming Revenue Category From Financial Reports | https://www.guru3d.com/story/nvidia-removes-gaming-revenue-category-from-financial-reports/
+[2026-05-23T06:02:04] Microsoft reports are exposing AI's real cost problem: Using the tech is more expensive than paying human employees | https://fortune.com/2026/05/22/microsoft-ai-cost-problem-tokens-agents/
+[2026-05-23T06:02:04] 'I got drafted': Inside Meta's push to move 7,000 staff into its AI task force | https://www.businessinsider.com/meta-ai-task-force-workers-2026-5
+[2026-05-23T06:02:04] Sam Altman makes 'mic drop' offer to every Y Combinator startup | https://techcrunch.com/2026/05/20/sam-altman-makes-mic-drop-offer-to-every-y-combinator-startup/
+[2026-05-23T06:02:04] DeltaBox: Millisecond C/R for AI Agents | https://news.google.com/rss/articles/CBMikwFBVV95cUxPNjIzbWxvVGxIcWtSRzBXOWt6aU5fd2xoRUVLWWhGRHlMamJGRVVRUTJtV3VrUld5YU4za2Ztb3VfcEZXR3AwUUsycDYzYUZkeTBZYWZ0Z1NBMDRjbzVKUTRPUG5KNkNReGs0dDZjQ3pwV2psYjJJTktwVGVjbzUxakxhZnNLRmlTYkY4VTdHanV0QVk?oc=5
+[2026-05-23T06:02:04] Starbucks scraps AI inventory tool after nine months | https://finance.yahoo.com/sectors/technology/articles/starbucks-scraps-ai-inventory-tool-165449189.html
+[2026-05-23T09:01:59] Anthropic says Mythos has already found more than 10,000 vulnerabilities | https://www.engadget.com/2180028/anthropic-claude-mythos-preview-project-glasswing-update/
+[2026-05-23T09:01:59] Alibaba's latest AI model ran autonomously for 35 hours to optimize code for its own custom chip | https://the-decoder.com/alibabas-latest-ai-model-ran-autonomously-for-35-hours-to-optimize-code-for-its-own-custom-chip/
+[2026-05-23T09:01:59] Google’s new anything-to-anything AI model is wild | https://www.theverge.com/tech/936507/gemini-omni-hands-on-deepfake-ai-video
+[2026-05-23T09:01:59] Trump administration closes loophole that allowed O-1 visa holders including advanced researchers at OpenAI to remain in the US during green card applications | https://di.gg/ai/723s10lf#story-ai-responses-heading
+[2026-05-23T09:01:59] JP Morgan CEO Jaime Dimon says he'll hire more 'AI people' and fewer bankers. | https://www.fastcompany.com/91546461/jpmorgan-ceo-jamie-dimon-says-hell-hire-fewer-bankers-more-ai-people
+[2026-05-23T09:01:59] Qwen-27B-IQ4_KS for ik_llama.cpp, especially for NVIDIA with 16GB VRAM | https://www.reddit.com/r/LocalLLaMA/comments/1tkmgwj/qwen27biq4_ks_for_ik_llamacpp_especially_for/
+[2026-05-23T09:01:59] AI tools accelerating security vulnerability discovery shift the primary constraint to human review, triage, and remediation | https://di.gg/ai/bv70qcvq
+[2026-05-23T09:01:59] How ‘slimmed-down’ large language models can reduce AI’s environmental and energy footprint | https://news.google.com/rss/articles/CBMixAFBVV95cUxQSVE2Znd4S3l3bjJ3RXI1TnkxNUs3RGVCckpXMnZqZXYtcGN5Vm0wMGJnelc0dndhYi1WNE1lLXpRV1ROUVJaWXNwTTNIVjNNb09FY0FkZlFNeUpHdUQ2UTBQUXV1eU41TjlFVDQ0YkNqMDlUY3NNYk1mclVSSkVFUjROWVpzWHN0TzlJelg1SkVMaTRjQ3ZwaE5Ub0JHeF84ZXFCZ2NUY3BhU1ZHXy13bnNMX2NjOThJU0o4VjlKalhxV2JP?oc=5
+[2026-05-23T09:01:59] Why is Tech Mahindra and NVIDIA’s ‘Hindi-First Education LLM’ based AI model special? | https://news.google.com/rss/articles/CBMizwFBVV95cUxNdEtsTlh2eEd0bk5BMjByVFVrTlhUbnBtUUUtNWVkVXlLRkM1a3V1RmJQUkItMzR6SEZkQ255TnJKdjR6Y0YydkFlQXRITmtvVVlXa1lPVWVqUDlrWk42MjI3eXktQ3BaRTlCMlA4ZlNsa2dNTUd4Yjdpd21RSHlSRzZwZXl3alc3X0FiN1RzSzdneXFIYndrZ0ZESFR6LVM2OWxfa0VYdzQ1M1ZnM1hwUENMbjNrNmJxek5jV2p4azBaZFhYbU5lQjVVNEt1NFU?oc=5
+[2026-05-23T09:01:59] meituan-longcat/LongCat-Video-Avatar-1.5 · Hugging Face | https://huggingface.co/meituan-longcat/LongCat-Video-Avatar-1.5
+[2026-05-23T12:01:17] DeepSeek permanently reduces the price of its flagship V4 model by 75 percent | https://www.engadget.com/2180062/deepseek-permanently-reduces-the-price-of-its-flagship-v4-model-by-75-percent/
+[2026-05-23T12:01:17] z386: An Open-Source 80386 Built Around Original Microcode | https://nand2mario.github.io/posts/2026/z386/
+[2026-05-23T12:01:17] You can turn off AI in Google Search results with this easy modifier | https://9to5google.com/2026/05/23/google-ai-overviews-turn-off-modifier/
+[2026-05-23T12:01:17] Ferrari is using IBM’s AI to create F1 superfans | https://techcrunch.com/2026/05/23/ferrari-is-using-ai-to-create-f1-superfans/
+[2026-05-23T15:01:25] White House backs $9 billion chip plan and Anthropic deal to keep spy agencies at AI frontier | https://news.google.com/rss/articles/CBMickFVX3lxTFBxcExQeE8zRTh1T0gxWEtSRFVqWlZCTkpkbmU3NzNuOVp3enBJWHJhaEFTLUpHNGpYNkN5SUVYZ1FpV3JrSEVHR0pHM3RGZHpyQUJYU081NEtkNkl5MFVzbEdtR01VOGd3aVlMSU1uRUpjZw?oc=5
+[2026-05-23T15:01:25] MPs demand AI ‘kill switch’ to defend against ‘catastrophe’ | https://www.telegraph.co.uk/business/2026/05/16/mps-demand-ai-kill-switch-to-protect-british-lives
+[2026-05-23T15:01:25] Europe races Meta and Japan to launch first Petabit-class submarine cable before 2030 as AI demand explodes | https://www.techradar.com/pro/europe-races-meta-and-japan-to-launch-first-petabit-class-submarine-cable-before-2030-as-ai-demand-explodes
+[2026-05-23T15:01:25] Gemini Live redesign now works with more ‘Connected Apps’ on Android | https://9to5google.com/2026/05/23/gemini-live-connected-apps/
+[2026-05-23T15:01:25] Analysis: AMD bets the future of AI runs on CPUs as much as GPUs | https://news.google.com/rss/articles/CBMihwFBVV95cUxNejk2dkFZeVBQZldzYUl0VDZScXZyUlNkdEFjWnR6WExsa2FId2pFdk9Ed2Fab1Vyc3JiblU2b0swVTFyRndhRGVPdDRWc2ZQQkN2WkM2dk5WME9DSThNVGdHUWx2RVMwNnZreUEtdDRYS29WTjBnM2NkUGpQaUtVQnBlQ0VSRkk?oc=5
+[2026-05-23T15:01:25] Starbucks Abandons Borked AI Inventory Tool That Couldn't Count: Report | https://gizmodo.com/starbucks-abandons-borked-ai-inventory-tool-that-couldnt-count-report-2000762252
+[2026-05-23T15:01:25] Pieter Levels says skills features in AI coding agents are overrated | https://di.gg/ai/9carryi2
+[2026-05-23T18:02:33] OpenAI rolled back an optimization in Codex that reduced cache hit rates and caused faster-than-expected usage limit depletion during long-running sessions | https://di.gg/ai/yp23bnxq
+[2026-05-23T18:02:33] SemiAnalysis posted data from 174,264 agentic coding sessions showing 42% of runtime on CPU tasks versus 58% on GPU inference | https://di.gg/ai/h7rp9igv
+[2026-05-23T18:02:33] AI systems solve Erdős problems via hours-long reasoning processes and generate functional code autonomously | https://di.gg/ai/pvdy5b3f
+[2026-05-23T18:02:33] SpaceX, OpenAI and Anthropic IPOs set to test limits of AI boom | https://news.google.com/rss/articles/CBMihAFBVV95cUxOVi0xbFNHeUNkRXItRE1uQmdVQmx4RHU1T0JkUlp0OE1sUEFBR0VNLUlhRHBHUlVYcmNOYm1VSmtHM1hhNS0xZGp2dmJnVmtia2tSdGVvZ2hkQTVSLTNlN09hMjZXZUZNaWZfWm4xeFFoRFpFUEExbVFOLXptZG1Od0JYSV8?oc=5
+[2026-05-23T18:02:33] Qwen3.6-35B-A3B Q4 262k context on 8GB 3070 Ti = +30tps | https://www.reddit.com/r/LocalLLaMA/comments/1tkxnuc/qwen3635ba3b_q4_262k_context_on_8gb_3070_ti_30tps/
+[2026-05-23T18:02:33] Imperfection itself becomes an asset — Scientists find brilliant way to use messy quantum noise and build a silicon photonic chip | https://www.techradar.com/pro/imperfection-itself-becomes-an-asset-scientists-find-brilliant-way-to-use-messy-quantum-noise-and-build-a-silicon-photonic-chip-that-embraces-chaos-and-noise
+[2026-05-23T18:02:33] OpenAI is hiring a $445,000 researcher. Requirements? Be 'tasteful and strategic.' | https://www.businessinsider.com/openai-safety-team-ai-self-improvement-challenge-job-2026-5
+[2026-05-23T21:02:19] Project Glasswing: Anthropic says Claude found 10,000 critical software flaws in a month | https://interestingengineering.com/ai-robotics/anthropic-project-glasswing-10000-software-vulnerabilities
+[2026-05-23T21:02:19] OpenAI's Codex is now smart enough to control your Mac even when it's locked | https://www.macworld.com/article/3147024/openai-codex-can-now-run-with-locked-macbooks.html
+[2026-05-23T21:02:19] Thibault Sottiaux, Engineering Lead on OpenAI's Codex team, proposed adding batch compute support to Codex under the label slow mode | https://di.gg/ai/840dl123
+[2026-05-23T21:02:19] More and more workers in India are collecting video data to train humanoid robots using head-mounted cameras | https://www.reddit.com/r/singularity/comments/1tlt8ql/more_and_more_workers_in_india_are_collecting/
+[2026-05-23T21:02:19] G4-MeroMero-26B-A4B-it-uncensored-heretic Is Out Now, a Finetune of gemma-4-26B-A4B-it | https://huggingface.co/llmfan46/G4-MeroMero-26B-A4B-it-uncensored-heretic-GGUF
+[2026-05-23T21:02:19] Professor who helped write UC Berkeley's new AI policy says it's about preserving 'the value add of a lawyer' | https://www.businessinsider.com/uc-berkeley-ai-policy-stricter-usage-restrictions-value-add-2026-5
+[2026-05-23T22:38:38] Salesforce (CRM) Announces Major Expansion of Agent Fabric Multi-Vendor AI Control Plane | https://news.google.com/rss/articles/CBMi0gFBVV95cUxOTEppaXhWZVUzZWdjTmNzdTlESFM4N3JvMG02U2t2QnV1M290ejl6YmRDXzJ1RDZMczBTRFVyc2hocG82d3JhYXdaSWFUTGduVDdCLXN0bE4zbHJmWWxZS2x2ck5Rc2w3VlVWSHZhcHhjcVFJLVg0WEJ4eTRidkJzNTZKclFOV2c3QXNreG9mYkFtOVMtZG56VC1WX3dwNE5vRUhFdHlIU0k2VUFKQWxyeTd1QzB0azcwWTUtb19LNHcteVNVQmxWWVJHdzVoUEs4d3fSAdIBQVVfeXFMTkxKaWl4VmVVM2VnY05jc3U5REhTODdybzBtNlNrdkJ1dTNvdHo5emJkQ18ydUQ2THMwU0RVcnNoaHBvNndyYWF3WklhVExnblQ3Qi1zdGxOM2xyZllsWUtsdnJOUXNsN1ZVVkh2YXB4Y3FRSS1YNFhCeHk0YnZCczU2SnJRTldnN0Fza3hvZmJBbTlTLWRuelQtVl93cDROb0VIRXR5SFNJNlVBSkFscnk3dUMwdGs3MFk1LW9fSzR3LXlTVUJsVllSR3c1aFBLOHd3?oc=5
+[2026-05-23T22:38:38] Fears and frenzy mount as SpaceX, OpenAI and Anthropic prepare for a $4T AI IPO wave | https://news.google.com/rss/articles/CBMi1gFBVV95cUxQUXg5ajRwN0xMTnp3LWtiUUF2endNWmxjQjdCLTB3c1M3UGd4QTR4NkRTZlpRVnRKRTBhWDFUTzZXdlNndW9nV2Q5dDExQ0RLQmpVUzkyczdXSVJqbEJwdkZzWms2ZFNic0pSUEdST1dGRWxoVTJVMUVXblczOC1LM19QVjZsRkJOcWhYaXcyZS0yQUY5TkRWMTJXa0U3b0thajY3dUIxVEVlWWItZEk5MVlzanpDVGdJZFdJdmZTOWwwMkwxU2ZUQU11QVFxQlFhQ1RudzFB?oc=5
+[2026-05-23T22:38:38] llama.cpp server have built-in native tools (exec_shell, edit_file, etc.) | https://www.reddit.com/r/LocalLLaMA/comments/1tluma3/llamacpp_server_have_builtin_native_tools_exec/
+[2026-05-23T22:38:38] Run Chrome’s tiny Gemma4 (aka Gemini Nano) directly on PC without GPU | https://www.reddit.com/r/LocalLLaMA/comments/1tlnqzj/run_chromes_tiny_gemma4_aka_gemini_nano_directly/
+[2026-05-23T22:38:38] Generative AI (Kling) is now used in actual tv shows and movies. | https://www.reddit.com/r/singularity/comments/1tlu4gv/generative_ai_kling_is_now_used_in_actual_tv/
+[2026-05-23T22:38:38] A new brain implant helps restore vision by communicating directly with the brain. | https://scienceaim.com/a-new-brain-implant-helps-restore-vision-by-communicating-directly-with-the-brain/
+[2026-05-23T22:38:38] AI is accelerating drug development | https://intuitionlabs.ai/articles/accelerating-drug-development-ai-pharma
+
+## 2026-05-24
+
+[2026-05-24T06:01:27] AWS MCP Server Reaches GA with Full API Coverage and IAM-Based Governance | https://www.infoq.com/news/2026/05/aws-mcp-ga/?utm_campaign=infoq_content&utm_source=infoq&utm_medium=feed&utm_term=global
+[2026-05-24T06:01:27] Researchers let Claude Code discover AI scaling algorithms that humans probably wouldn't have designed | https://the-decoder.com/researchers-let-claude-code-discover-ai-scaling-algorithms-that-humans-probably-wouldnt-have-designed/
+[2026-05-24T06:01:27] Silk: Open-source cooperative fiber scheduler | https://github.com/ClickHouse/silk
+[2026-05-24T06:01:27] Newsom signs order aimed at tackling AI job displacement | https://thehill.com/policy/technology/5889582-california-ai-job-losses
+[2026-05-24T06:01:27] CEO Walks Back Comment About Replacing ‘Lower-Value Human Capital’ With AI | https://www.wsj.com/finance/banking/ceo-walks-back-comment-about-replacing-lower-value-human-capital-with-ai-15bdfc5c
