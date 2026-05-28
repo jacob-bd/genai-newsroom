@@ -286,7 +286,7 @@ PICKS_FILE = '$PICKS_FILE'
 VOTE_FILE = '$VOTE_TMPFILE'
 
 def extract_ranks(raw):
-    \"\"\"Extract a JSON array of integers 1-10 from agent output. Returns list (may be empty for SKIP), or None for auth/error."""
+    # Returns list of ints (may be empty for SKIP), or None for auth/error
     raw = (raw or '').strip()
     # Auth / fatal error: don't count as a valid vote
     low = raw.lower()
