@@ -286,20 +286,27 @@ PICKS_FILE = '$PICKS_FILE'
 VOTE_FILE = '$VOTE_TMPFILE'
 
 def extract_ranks(raw):
-    \"\"\"Extract a JSON array of integers 1-10 from agent output.\"\"\"
+    \"\"\"Extract a JSON array of integers 1-10 from agent output. Returns list (may be empty for SKIP), or None for auth/error."""
+    raw = (raw or '').strip()
+    # Auth / fatal error: don't count as a valid vote
+    low = raw.lower()
+    if any(kw in low for kw in ['401', 'authenticate', 'invalid authentication', 'failed to authenticate']):
+        return None
     # Try direct JSON parse
     try:
-        arr = json.loads(raw.strip())
+        arr = json.loads(raw)
         if isinstance(arr, list):
             return [int(x) for x in arr if isinstance(x, (int, float)) and 1 <= int(x) <= 10]
     except (json.JSONDecodeError, ValueError):
         pass
-    # Regex fallback: find first [...] containing numbers
-    match = re.search(r'\[[\d\s,]+\]', raw)
-    if match:
+    # Regex fallback: find LAST [...] (agent may emit prose then the array)
+    # Use * not + so empty [] matches too
+    matches = re.findall(r'\[[\d\s,]*\]', raw)
+    for m in reversed(matches):
         try:
-            arr = json.loads(match.group())
-            return [int(x) for x in arr if isinstance(x, (int, float)) and 1 <= int(x) <= 10]
+            arr = json.loads(m)
+            if isinstance(arr, list):
+                return [int(x) for x in arr if isinstance(x, (int, float)) and 1 <= int(x) <= 10]
         except (json.JSONDecodeError, ValueError):
             pass
     return []
@@ -316,12 +323,15 @@ with open(VOTE_FILE) as f:
             continue
         agent_id, raw = parts
         ranks = extract_ranks(raw)
-        if not ranks:
-            print(f'  warning: could not parse votes from agent {agent_id}', file=sys.stderr)
+        if ranks is None:
+            print(f'  warning: agent {agent_id} returned auth/error — excluded from vote', file=sys.stderr)
             continue
-        print(f'  agent {agent_id} voted for ranks: {ranks}', file=sys.stderr)
-        for r in ranks:
-            votes[r] = votes.get(r, 0) + 1
+        if ranks:
+            print(f'  agent {agent_id} voted for ranks: {ranks}', file=sys.stderr)
+            for r in ranks:
+                votes[r] = votes.get(r, 0) + 1
+        else:
+            print(f'  agent {agent_id} voted SKIP (no ranks)', file=sys.stderr)
 
 # Majority vote (>=2), sort by vote count desc, tie-break lowest rank, cap
 approved = sorted(
