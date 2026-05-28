@@ -59,25 +59,25 @@ MAX_ARTICLES = 500
 # ── Failover LLM chain ──────────────────────────────────────────────
 FAILOVER_CHAIN = [
     {
-        "name": "Gemini 3.1 Flash Lite",
-        "model": "gemini-3.1-flash-lite-preview",
+        "name": "Gemini 3 Flash Preview",
+        "model": "gemini-3-flash-preview",
         "api": "gemini",
         "env_key": "GEMINI_API_KEY",
-        "timeout": 120,
+        "timeout": 90,
     },
     {
-        "name": "OpenRouter (Grok 4.1 Fast)",
-        "model": "x-ai/grok-4.1-fast",
+        "name": "DeepSeek V4 Flash (OpenRouter)",
+        "model": "deepseek/deepseek-v4-flash",
         "api": "openrouter",
         "env_key": "OPENROUTER_API_KEY",
         "timeout": 90,
     },
     {
-        "name": "Gemini 3 Flash Preview",
-        "model": "gemini-3-flash-preview",
-        "api": "gemini",
-        "env_key": "GEMINI_API_KEY",
-        "timeout": 120,
+        "name": "Grok 4.3 (OpenRouter)",
+        "model": "x-ai/grok-4.3",
+        "api": "openrouter",
+        "env_key": "OPENROUTER_API_KEY",
+        "timeout": 90,
     },
 ]
 VALID_CATEGORIES = {
@@ -322,8 +322,9 @@ def _call_openrouter_json(prompt, api_key, model, timeout):
 def judge_duplicate_candidate(article, matches):
     prompt = build_duplicate_judge_prompt(article, matches)
     for provider in FAILOVER_CHAIN:
-        api_key = os.environ.get(provider["env_key"])
-        if not api_key:
+        env_key = provider.get("env_key")
+        api_key = os.environ.get(env_key) if env_key else None
+        if env_key and not api_key:
             continue
 
         if provider["api"] == "gemini":
@@ -613,9 +614,10 @@ def call_llm_with_failover(prompt, articles, github_articles, editorial_profile,
     Each step may reduce candidate count for speed.
     """
     for i, provider in enumerate(FAILOVER_CHAIN):
-        api_key = os.environ.get(provider["env_key"])
-        if not api_key:
-            log("  Skipping %s: %s not set" % (provider["name"], provider["env_key"]))
+        env_key = provider.get("env_key")
+        api_key = os.environ.get(env_key) if env_key else None
+        if env_key and not api_key:
+            log("  Skipping %s: %s not set" % (provider["name"], env_key))
             continue
 
         log("Trying %s (model: %s, timeout: %ds)" % (

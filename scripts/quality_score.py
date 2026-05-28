@@ -202,15 +202,25 @@ def cross_scan_dedup(articles):
         ).fetchall()
         blocked.update(r[0] for r in rows3 if r[0])
 
+        # 4. title similarity against published_posts last 30 days (catches manual posts with no source_url)
+        pub_titles = [r[0] for r in conn.execute(
+            "SELECT title FROM published_posts WHERE date > date('now', '-30 days')"
+        ).fetchall() if r[0]]
+
         conn.close()
 
         filtered = []
         removed = 0
         for a in articles:
-            if normalize_url(a["url"]) in blocked:
+            norm = normalize_url(a["url"])
+            if norm in blocked:
                 removed += 1
-            else:
-                filtered.append(a)
+                continue
+            title = a.get("title", "")
+            if title and any(title_similarity(title, pt) >= 0.75 for pt in pub_titles):
+                removed += 1
+                continue
+            filtered.append(a)
         if removed > 0:
             print(f"  Cross-scan dedup: removed {removed} (published or recently shown)", file=sys.stderr)
         return filtered

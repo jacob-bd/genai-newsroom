@@ -33,7 +33,7 @@ CTA_LINE1_RAW = "For more real-time AI news, join our Telegram channel:"
 CTA_URL = "https://t.me/genaispot"
 
 # Buffer-specific CTA: no URL in body (link goes in first comment to avoid algo suppression)
-BUFFER_CTA_RAW = 'For more AI news, search "GenAISpot" on Telegram'
+BUFFER_CTA_RAW = 'For more AI news and story sources, search "GenAISpot" on Telegram'
 
 # Telegram channel username (for post URLs in first comments)
 TELEGRAM_CHANNEL_USERNAME = "genaispot"
@@ -247,41 +247,48 @@ def resolve_telegram_message(msg_id, chat_id="-1003300061793"):
 
         image_local = None
         video_local = None
+        is_video_only = bool(video) and not bool(photos)
 
         if photos:
-            largest = max(photos, key=lambda p: p.get("file_size", 0))
-            file_id = largest["file_id"]
-            req2 = urllib.request.Request(f"{base}/getFile?file_id={file_id}")
-            with urllib.request.urlopen(req2, timeout=30) as resp2:
-                file_result = json.loads(resp2.read())
-            if file_result.get("ok"):
-                file_path = file_result["result"]["file_path"]
-                dl_url = f"https://api.telegram.org/file/bot{bot_token}/{file_path}"
-                ext = file_path.split(".")[-1] if "." in file_path else "jpg"
-                tmp_file = f"/tmp/tg_image_{msg_id}.{ext}"
-                with urllib.request.urlopen(dl_url, timeout=60) as image_resp, open(tmp_file, "wb") as image_out:
-                    image_out.write(image_resp.read())
-                image_local = tmp_file
+            try:
+                largest = max(photos, key=lambda p: p.get("file_size", 0))
+                file_id = largest["file_id"]
+                req2 = urllib.request.Request(f"{base}/getFile?file_id={file_id}")
+                with urllib.request.urlopen(req2, timeout=30) as resp2:
+                    file_result = json.loads(resp2.read())
+                if file_result.get("ok"):
+                    file_path = file_result["result"]["file_path"]
+                    dl_url = f"https://api.telegram.org/file/bot{bot_token}/{file_path}"
+                    ext = file_path.split(".")[-1] if "." in file_path else "jpg"
+                    tmp_file = f"/tmp/tg_image_{msg_id}.{ext}"
+                    with urllib.request.urlopen(dl_url, timeout=60) as image_resp, open(tmp_file, "wb") as image_out:
+                        image_out.write(image_resp.read())
+                    image_local = tmp_file
+            except Exception as e:
+                print(f"   ⚠️ Photo download failed: {e}", file=sys.stderr)
 
         if video and not image_local:
-            file_id = video["file_id"]
-            req2 = urllib.request.Request(f"{base}/getFile?file_id={file_id}")
-            with urllib.request.urlopen(req2, timeout=30) as resp2:
-                file_result = json.loads(resp2.read())
-            if file_result.get("ok"):
-                file_path = file_result["result"]["file_path"]
-                dl_url = f"https://api.telegram.org/file/bot{bot_token}/{file_path}"
-                ext = file_path.split(".")[-1] if "." in file_path else "mp4"
-                tmp_file = f"/tmp/tg_video_{msg_id}.{ext}"
-                with urllib.request.urlopen(dl_url, timeout=120) as video_resp, open(tmp_file, "wb") as video_out:
-                    video_out.write(video_resp.read())
-                video_local = tmp_file
+            try:
+                file_id = video["file_id"]
+                req2 = urllib.request.Request(f"{base}/getFile?file_id={file_id}")
+                with urllib.request.urlopen(req2, timeout=30) as resp2:
+                    file_result = json.loads(resp2.read())
+                if file_result.get("ok"):
+                    file_path = file_result["result"]["file_path"]
+                    dl_url = f"https://api.telegram.org/file/bot{bot_token}/{file_path}"
+                    ext = file_path.split(".")[-1] if "." in file_path else "mp4"
+                    tmp_file = f"/tmp/tg_video_{msg_id}.{ext}"
+                    with urllib.request.urlopen(dl_url, timeout=120) as video_resp, open(tmp_file, "wb") as video_out:
+                        video_out.write(video_resp.read())
+                    video_local = tmp_file
+            except Exception as e:
+                print(f"   ⚠️ Video download failed (likely >20MB): {e}", file=sys.stderr)
 
-        return image_local, video_local, caption or None
+        return image_local, video_local, caption or None, is_video_only
 
     except Exception as e:
         print(f"ERROR resolving Telegram message: {e}", file=sys.stderr)
-        return None, None, None
+        return None, None, None, False
 
 
 def push_to_buffer(text, channel_id, image_url=None, video_url=None, draft=False, mode="shareNow", source_lines=None):
@@ -312,8 +319,8 @@ def push_to_buffer(text, channel_id, image_url=None, video_url=None, draft=False
         if video_url:
             args["assets"].append({"video": {"url": video_url}})
 
-    cmd = ["mcporter", "call", "buffer.create_post", "--args", json.dumps(args)]
-    print(f"DEBUG ARGS: {json.dumps(args)}")
+    cmd = ["mcporter", "call", "buffer.create_post", "--args", json.dumps(args, ensure_ascii=False)]
+    print(f"DEBUG ARGS: {json.dumps(args, ensure_ascii=False)}")
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     
     if result.returncode != 0:
@@ -360,15 +367,25 @@ def main():
 
     if args.telegram_msg:
         print(f"📸 Resolving media + caption from Telegram msg {args.telegram_msg}...", flush=True)
-        tg_image, tg_video, tg_caption = resolve_telegram_message(args.telegram_msg, args.telegram_chat)
+        tg_image, tg_video, tg_caption, tg_is_video_only = resolve_telegram_message(args.telegram_msg, args.telegram_chat)
 
         # Only use Telegram media if no manual override was provided (None)
         if image_url is None and tg_image:
             image_url = tg_image
             print(f"   ✅ Got image from Telegram")
         if video_url is None and tg_video:
-            video_url = tg_video
-            print(f"   ✅ Got video from Telegram")
+            if tg_image:
+                video_url = tg_video
+                print(f"   ✅ Got video from Telegram")
+            else:
+                # Video-only post: per exclusion rule, push text-only and drop video
+                print(f"   ⚠️ Video-only post — sending text-only per Buffer video exclusion rule")
+                args.allow_no_image = True
+
+        # Video-only post where download failed (e.g. >20MB): still push text-only
+        if tg_is_video_only and not tg_video and not tg_image:
+            print(f"   ⚠️ Video-only post (download failed) — sending text-only per Buffer video exclusion rule")
+            args.allow_no_image = True
 
         if not telegram_text and tg_caption:
             telegram_text = tg_caption

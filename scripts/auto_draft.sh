@@ -212,6 +212,8 @@ Prior coverage (weave a callback link ONLY if genuinely relevant):
 $RECENT_COVERAGE
 
 === OUTPUT FORMAT ===
+CRITICAL: Output ONLY the raw JSON object. Zero text before or after. No markdown fences. No explanation. Start your response with { and end with }.
+
 Draft the post following Telegram mode from the voice rules exactly.
 Then return ONLY valid JSON (no markdown fences, no explanation):
 {
@@ -222,7 +224,7 @@ Then return ONLY valid JSON (no markdown fences, no explanation):
   \"emoji\": \"single story-appropriate emoji\",
   \"category\": \"AI / SUBCATEGORY\",
   \"template_highlight\": \"2-3 key words or phrases that capture the essence of the story, comma-separated (e.g. \\\"OpenAI,IPO\\\", \\\"Karpathy,Anthropic\\\", \\\"\$355M,Modal\\\") — each MUST be an exact substring of headline_line1 or headline_line2. Pick the most newsworthy nouns: company names, dollar amounts, model names, action verbs. NOT generic words like 'new', 'AI', 'says'.\",
-  \"subline\": \"short subline for the news card\"
+  \"subline\": \"short subline for the news card (include dollar amounts like \$1B, \$492M; do NOT strip the \$ sign — 'raises \$1B at \$25B' not 'raises 1B at 25B'). Example: 'Raises \$1B at \$25B valuation' or 'Hits \$492M ARR with 50% growth'\"
 }"
 
   # Dry-run: show prompt, skip actual call
@@ -232,7 +234,7 @@ Then return ONLY valid JSON (no markdown fences, no explanation):
     continue
   fi
 
-  # 5. Draft via alef chat send
+  # 5. Draft via alef chat send — retry once, then fall back to Claude Haiku
   echo "  Drafting via OpenCode/DeepSeek..." >&2
   RESP=$(alef chat send "$DRAFT_PROMPT" \
     --backend opencode \
@@ -241,34 +243,59 @@ Then return ONLY valid JSON (no markdown fences, no explanation):
     --cwd "$ALEF_HOME/workspace" \
     --json 2>/dev/null || echo '{"ok":false}')
 
-  # Parse response: alef chat send --json → { ok, data: { text, ... } }
   if ! echo "$RESP" | jq -e '.ok == true' >/dev/null 2>&1; then
-    echo "  FAIL: alef chat send returned error" >&2
-    echo "  Response: $(echo "$RESP" | head -c 200)" >&2
+    echo "  WARN: OpenCode attempt 1 failed — retrying in 3s..." >&2
+    sleep 3
+    RESP=$(alef chat send "$DRAFT_PROMPT" \
+      --backend opencode \
+      --model deepseek/deepseek-v4-flash \
+      --chat "$NEWSROOM_CHAT_ID" \
+      --cwd "$ALEF_HOME/workspace" \
+      --json 2>/dev/null || echo '{"ok":false}')
+  fi
+
+  if ! echo "$RESP" | jq -e '.ok == true' >/dev/null 2>&1; then
+    echo "  WARN: OpenCode unavailable — falling back to Claude Haiku..." >&2
+    RESP=$(alef chat send "$DRAFT_PROMPT" \
+      --backend claude \
+      --model claude-haiku-4-5-20251001 \
+      --json 2>/dev/null || echo '{"ok":false}')
+  fi
+
+  if ! echo "$RESP" | jq -e '.ok == true' >/dev/null 2>&1; then
+    echo "  FAIL: all backends failed for '$TITLE'" >&2
+    echo "  Last response: $(echo "$RESP" | head -c 200)" >&2
     FAIL_COUNT=$((FAIL_COUNT + 1))
     continue
   fi
 
   RAW_TEXT=$(echo "$RESP" | jq -r '.data.text // ""')
 
-  # 6. Extract draft JSON from response (Python — handles fences, preamble, nested braces)
+  # 6. Extract draft JSON (handles fences, prose preamble, unescaped control chars)
   DRAFT_JSON=$(python3 -c "
 import json, re, sys
 
 text = sys.stdin.read()
 
-# Strategy 1: Find JSON block in markdown fences
+def try_parse(s):
+    for strict in (True, False):
+        try:
+            obj = json.loads(s, strict=strict)
+            if 'draft_html' in obj:
+                return obj
+        except Exception:
+            pass
+    return None
+
+# Strategy 1: JSON in markdown fences
 fenced = re.search(r'\`\`\`(?:json)?\s*(\{.*?\})\s*\`\`\`', text, re.DOTALL)
 if fenced:
-    try:
-        obj = json.loads(fenced.group(1))
-        if 'draft_html' in obj:
-            print(json.dumps(obj))
-            sys.exit(0)
-    except json.JSONDecodeError:
-        pass
+    obj = try_parse(fenced.group(1))
+    if obj:
+        print(json.dumps(obj))
+        sys.exit(0)
 
-# Strategy 2: Find JSON using brace-balanced scanning
+# Strategy 2: Brace-balanced scanner (handles prose before JSON)
 depth = 0
 start = -1
 for i, ch in enumerate(text):
@@ -279,17 +306,26 @@ for i, ch in enumerate(text):
     elif ch == '}':
         depth -= 1
         if depth == 0 and start >= 0:
-            candidate = text[start:i+1]
-            try:
-                obj = json.loads(candidate)
-                if 'draft_html' in obj:
-                    print(json.dumps(obj))
-                    sys.exit(0)
-            except json.JSONDecodeError:
-                pass
+            obj = try_parse(text[start:i+1])
+            if obj:
+                print(json.dumps(obj))
+                sys.exit(0)
             start = -1
 
-print('')  # No valid JSON found
+# Strategy 3: Locate draft_html key, scan outward for enclosing object
+m = re.search(r'\"draft_html\"\s*:', text)
+if m:
+    for j in range(m.start(), -1, -1):
+        if text[j] == '{':
+            for k in range(len(text) - 1, m.end(), -1):
+                if text[k] == '}':
+                    obj = try_parse(text[j:k+1])
+                    if obj:
+                        print(json.dumps(obj))
+                        sys.exit(0)
+            break
+
+print('')
 " <<< "$RAW_TEXT" 2>/dev/null)
 
   if [ -z "$DRAFT_JSON" ]; then
@@ -308,6 +344,8 @@ print('')  # No valid JSON found
   CATEGORY=$(echo "$DRAFT_JSON" | jq -r '.category // "AI"')
   HIGHLIGHT=$(echo "$DRAFT_JSON" | jq -r '.template_highlight // ""')
   SUBLINE=$(echo "$DRAFT_JSON" | jq -r '.subline // ""')
+  # Auto-restore missing dollar signs: "492M" → "$492M", "\$492M" → "$492M"
+  SUBLINE=$(echo "$SUBLINE" | sed -E 's/\\?\$?([0-9]+(\.[0-9]+)?[BMKbmk])\b/$\1/g')
   TODAY=$(date +%Y-%m-%d)
   TEMPLATE="dark-editorial"
 

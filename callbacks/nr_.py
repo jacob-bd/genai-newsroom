@@ -4,7 +4,7 @@ nr_.py — Newsroom draft review callback handler (single-invocation).
 
 Called by the Alef Agent daemon when a callback_data starting with "nr_" is received.
 Handles: nr_approve, nr_drop, nr_edit, nr_back,
-         nr_edit_image, nr_img_classic, nr_img_t1, nr_img_t2, nr_img_t3,
+         nr_edit_image, nr_rehighlight, nr_img_classic, nr_img_t1, nr_img_t2, nr_img_t3,
          nr_edit_shorter, nr_edit_punchier, nr_edit_rewrite, nr_edit_snarky,
          nr_edit_opinion, nr_op_matters, nr_op_play, nr_op_real,
          nr_op_signal, nr_op_room, nr_op_tell,
@@ -54,7 +54,9 @@ PENDING_FILE = NEWSROOM / "data/newsroom_pending.json"
 WHITEBOARD = NEWSROOM / "data/newsroom_whiteboard.md"
 
 TEST_CHAT = "-1003889167143"
-UPDATE_GROUP = "-1003682312998"
+UPDATE_GROUP = "-1003682312998"   # newsroom channel — council summary only
+NOTIF_GROUP = "-1003853245974"    # notifications channel — all other workflow events   # newsroom channel — council summary only
+NOTIF_GROUP = "-1003853245974"    # notifications channel — everything else
 DEDUP_DB = NEWSROOM / "data/news_dedup.db"
 
 
@@ -124,13 +126,14 @@ DROP_REASON_KEYBOARD = (
 )
 EDIT_KEYBOARD = [
     [{"text": "\U0001f5bc New image", "callback_data": "nr_edit_image"},
-     {"text": "✂️ Shorter", "callback_data": "nr_edit_shorter"}],
-    [{"text": "\U0001f525 Punchier", "callback_data": "nr_edit_punchier"},
-     {"text": "\U0001f4f0 Rewrite", "callback_data": "nr_edit_rewrite"}],
-    [{"text": "\U0001f608 Snarky", "callback_data": "nr_edit_snarky"},
-     {"text": "\U0001f4ac Add Opinion", "callback_data": "nr_edit_opinion"}],
-    [{"text": "\U0001f504 Rethink Headline", "callback_data": "nr_rethink_headline"},
-     {"text": "✏️ Custom Headline", "callback_data": "nr_custom_headline"}],
+     {"text": "\U0001f3a8 Re-highlight", "callback_data": "nr_rehighlight"}],
+    [{"text": "✂️ Shorter", "callback_data": "nr_edit_shorter"},
+     {"text": "\U0001f525 Punchier", "callback_data": "nr_edit_punchier"}],
+    [{"text": "\U0001f4f0 Rewrite", "callback_data": "nr_edit_rewrite"},
+     {"text": "\U0001f608 Snarky", "callback_data": "nr_edit_snarky"}],
+    [{"text": "\U0001f4ac Add Opinion", "callback_data": "nr_edit_opinion"},
+     {"text": "\U0001f504 Rethink Headline", "callback_data": "nr_rethink_headline"}],
+    [{"text": "✏️ Custom Headline", "callback_data": "nr_custom_headline"}],
     [{"text": "« Back", "callback_data": "nr_back"}],
 ]
 IMAGE_KEYBOARD = [
@@ -156,6 +159,9 @@ BUFFER_KEYBOARD = [
 BUFFER_VIDEO_KEYBOARD = [
     [{"text": "\U0001f4dd Buffer Draft (no video)", "callback_data": "nr_buf_draft"}],
     [{"text": "⏭ Skip Buffer", "callback_data": "nr_buf_skip"}],
+]
+BUFFER_PROCESSING_KEYBOARD = [
+    [{"text": "⏳ Pushing to Buffer...", "callback_data": "nr_noop"}],
 ]
 
 OPINION_LABEL_MAP = {
@@ -186,8 +192,8 @@ Jacob's editorial positions (use to inform angle, never quote verbatim):
 
 TEXT_PROMPTS = {
     "shorter":  "Trim this Telegram news post to about 70% of its current length. Keep all key facts. Preserve all HTML tags exactly. Return only the rewritten text.",
-    "punchier": "Rewrite this post to be more punchy and impactful. Keep same facts and structure. Preserve all HTML tags. Return only the rewritten text.",
-    "rewrite":  "Fully rewrite this post with a fresh angle. Keep same facts. Preserve all HTML tags. Return only the rewritten text.",
+    "punchier": "Rewrite this post to be more punchy and impactful. Keep same facts and structure. Preserve all HTML tags. CRITICAL: output must be under 950 characters total. Return only the rewritten text.",
+    "rewrite":  "Fully rewrite this post with a fresh angle. Keep same facts. Preserve all HTML tags. CRITICAL: output must be under 950 characters total. Return only the rewritten text.",
     "snarky":   f"""Rewrite this Telegram news post in Jacob's voice: sharp, blunt, zero corporate polish.
 
 Rules:
@@ -197,6 +203,7 @@ Rules:
 - Keep ALL facts, ALL HTML tags, and ALL structure (heading, body, Read more, hashtags).
 - No em-dashes. No banned AI filler words (delve, tapestry, leverage, etc.).
 - The headline stays unchanged. Only the body sentences get snarky.
+- CRITICAL: output must be under 950 characters total. Cut words if needed, do NOT exceed this.
 - Return ONLY the rewritten post — no commentary, no explanation.
 
 {JACOB_EDITORIAL_LENS}""",
@@ -439,6 +446,8 @@ def handle_approve():
     emoji = story.get("emoji", "\U0001f525")
     title = story.get("title", "")
 
+    source_url = story.get("url") or story.get("source_url") or ""
+
     cmd = [
         "python3", str(NEWSROOM / "scripts/telegram_post.py"),
         "--channel", "live",
@@ -449,6 +458,8 @@ def handle_approve():
     ]
     if title:
         cmd += ["--title", title]
+    if source_url:
+        cmd += ["--source-url", source_url]
 
     result = subprocess.run(cmd, capture_output=True, text=True,
                             env={**os.environ, "HOME": os.path.expanduser("~")})
@@ -468,7 +479,7 @@ def handle_approve():
 
     log_telemetry("approve", detail=live_msg_id, story=story)
     link = f"https://t.me/genaispot/{live_msg_id}" if live_msg_id else "(check channel)"
-    send_msg(UPDATE_GROUP, f"✅ Posted live: {link}")
+    send_msg(NOTIF_GROUP, f"✅ Posted live: {link}")
 
     has_video = bool(story.get("video_path"))
     keyboard = BUFFER_VIDEO_KEYBOARD if has_video else BUFFER_KEYBOARD
@@ -493,6 +504,8 @@ def handle_buffer(mode):
         set_keyboard()
         return
 
+    set_keyboard(BUFFER_PROCESSING_KEYBOARD)
+
     live_msg_id = story.get("live_msg_id")
     image_path = story.get("image_path", "")
     has_video = bool(story.get("video_path"))
@@ -503,10 +516,12 @@ def handle_buffer(mode):
     flag_map = {"queue": "--queue", "publish": "--publish", "draft": "--draft"}
     cmd = [
         "python3", str(NEWSROOM / "scripts/buffer_push.py"),
-        "--telegram-msg", live_msg_id or MESSAGE_ID,
+        "--telegram-msg", str(live_msg_id or MESSAGE_ID),
     ]
     if include_image:
         cmd += ["--image", image_path]
+    else:
+        cmd += ["--allow-no-image"]
     cmd.append(flag_map[mode])
 
     result = subprocess.run(cmd, capture_output=True, text=True,
@@ -527,7 +542,7 @@ def handle_buffer(mode):
 
     label = {"queue": "queued", "publish": "published", "draft": "saved as draft"}[mode]
     suffix = " (no video — upload manually)" if has_video else ""
-    send_msg(UPDATE_GROUP, f"✅ Buffer {label}{suffix}")
+    send_msg(NOTIF_GROUP, f"✅ Buffer {label}{suffix}")
     print(f"[BUFFER:{mode}] msg {MESSAGE_ID} live={live_msg_id} slug={slug}", flush=True)
 
 
@@ -543,7 +558,7 @@ def handle_buffer_skip():
     _pop_pending(MESSAGE_ID)
     if slug:
         _remove_whiteboard_row(slug)
-    send_msg(UPDATE_GROUP, "⏭ Buffer skipped — story done.")
+    send_msg(NOTIF_GROUP, "⏭ Buffer skipped — story done.")
     print(f"[BUFFER:skip] msg {MESSAGE_ID} slug={slug}", flush=True)
 
 
@@ -563,7 +578,7 @@ def handle_drop_reason(reason):
         _remove_whiteboard_row(slug)
     emoji, text = DROP_REASON_LABELS.get(reason, ("", reason))
     label = f"{emoji} {text}".strip()
-    send_msg(UPDATE_GROUP, f"🗑 Dropped ({label}): {story.get('title', 'story')}")
+    send_msg(NOTIF_GROUP, f"🗑 Dropped ({label}): {story.get('title', 'story')}")
     print(f"[DROP:{reason}] msg {MESSAGE_ID} slug={slug}", flush=True)
 
 
@@ -581,13 +596,14 @@ def handle_edit_image():
 
 
 def _ai_pick_highlight(headline):
-    """Use LLM to pick 2-3 key words/phrases to highlight in hot-pink."""
+    """Use LLM to pick 1-3 SHORT key terms to highlight in hot-pink."""
     prompt = (
-        "Pick 2-3 key words or phrases that capture the essence of this news card headline. "
-        "Return them comma-separated (e.g. 'OpenAI,IPO' or 'Karpathy,Anthropic' or '$355M,Modal'). "
-        "Prefer: company names, dollar amounts, model names, percentages, strong action words. "
-        "Avoid generic words like: new, AI, says, launches, now. "
-        "Each term MUST be an exact substring of the headline. "
+        "Pick 1-3 SHORT terms to highlight on this news headline. "
+        "HARD RULES: each term max 2 words, max 20 characters, must be an exact substring of the headline. "
+        "PREFER: company names, dollar amounts, model names, percentages, numbers. "
+        "AVOID: phrases longer than 2 words, generic words (new, AI, says, launches, now, the, is). "
+        "Good examples: 'OpenAI' or '$40B,Gemini' or 'GPT-5,Microsoft' or '1,000,Tokens'. "
+        "Bad examples: 'OpenAI announces' or 'Major Partnership Deal' (too long). "
         "Return ONLY the comma-separated terms — no quotes, no explanation."
     )
     result, err = call_llm(prompt, headline)
@@ -596,15 +612,46 @@ def _ai_pick_highlight(headline):
     raw = result.strip().strip('"\'')
     if not raw:
         return ""
-    # Validate each term is an exact substring; keep only valid ones
     hl_upper = headline.upper()
     valid = []
     for term in raw.split(","):
         term = term.strip().strip('"\'')
-        if term and term.upper() in hl_upper:
+        # Reject: not a substring, more than 2 words, or longer than 20 chars
+        if (term and term.upper() in hl_upper
+                and len(term.split()) <= 2
+                and len(term) <= 20):
             idx = hl_upper.find(term.upper())
             valid.append(headline[idx:idx + len(term)])
     return ",".join(valid) if valid else ""
+
+
+CATEGORY_TAGS = [
+    "AI / Research", "AI / Business", "AI / Products", "AI / Policy", "AI / Safety",
+    "AI / Hardware", "AI / Agents", "AI / Developer", "AI / Design", "AI / Military",
+    "AI / Healthcare", "AI / Education", "AI / Finance", "AI / Infrastructure",
+    "Open Source", "Big Tech", "Startups", "Breaking",
+]
+
+def _derive_category(story):
+    """Ask LLM to pick the best category tag from the standard list."""
+    draft_path = story.get("draft_path", "")
+    title = story.get("title", "")
+    try:
+        raw = Path(draft_path).read_text() if draft_path and Path(draft_path).exists() else ""
+        plain = re.sub(r'<[^>]+>', '', raw).strip()[:600]
+    except Exception:
+        plain = ""
+    tags = ", ".join(CATEGORY_TAGS)
+    prompt = (
+        f"Pick the single best category tag for this news story from this list:\n{tags}\n\n"
+        "Rules: return ONLY the exact tag text, nothing else. No explanation."
+    )
+    context = f"Title: {title}\n\n{plain}"
+    result, err = call_llm(prompt, context)
+    if err or not result:
+        return "AI / Business"
+    candidate = result.strip().strip('"\'')
+    return candidate if candidate in CATEGORY_TAGS else "AI / Business"
 
 
 def _derive_subline(draft_path):
@@ -696,7 +743,7 @@ def handle_image_template(template_key):
     template_name = TEMPLATE_MAP.get(template_key, "dark-editorial")
     image_path = story.get("image_path", "")
     draft_path = story.get("draft_path", "")
-    category = story.get("template_category") or "AI"
+    category = story.get("template_category") or _derive_category(story)
     headline = story.get("template_headline") or story.get("title", "")
 
     subline = story.get("template_subline", "")
@@ -747,6 +794,9 @@ def handle_image_template(template_key):
         set_keyboard(MAIN_KEYBOARD)
         return
 
+    story["template_category"] = category
+    story["current_template"] = template_name
+    save_story(story)
     log_telemetry(f"image:template:{template_name}", story=story)
     _edit_image(image_path, draft_path)
     set_keyboard(MAIN_KEYBOARD)
@@ -790,7 +840,7 @@ def _generate_headline_from_draft(draft_path, title):
 def _render_current_template(story, h1, h2, image_path):
     """Re-render image with given headlines using story's current template."""
     template_name = story.get("current_template", "dark-editorial")
-    category = story.get("template_category") or "AI"
+    category = story.get("template_category") or _derive_category(story)
     subline = story.get("template_subline", "")
     if not subline:
         subline = _derive_subline(story.get("draft_path", ""))
@@ -817,6 +867,10 @@ def _render_current_template(story, h1, h2, image_path):
         cmd, capture_output=True, text=True,
         env={**os.environ, "HOME": os.path.expanduser("~")},
     )
+    if result.returncode == 0:
+        story["template_category"] = category
+        story["current_template"] = template_name
+        save_story(story)
     return result.returncode == 0, highlight
 
 
@@ -839,7 +893,7 @@ def handle_rethink_headline():
             tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "❌ Headline generation failed"})
         else:
             send_msg(CHAT_ID, "❌ Headline generation failed.")
-        set_keyboard(EDIT_KEYBOARD)
+        set_keyboard(MAIN_KEYBOARD)
         return
 
     # Validate: h2 must not start lowercase (split-word guard)
@@ -853,7 +907,7 @@ def handle_rethink_headline():
     ok, highlight = _render_current_template(story, h1, h2, image_path)
     if not ok:
         send_msg(CHAT_ID, "❌ Render failed.")
-        set_keyboard(EDIT_KEYBOARD)
+        set_keyboard(MAIN_KEYBOARD)
         return
 
     story["headline_line1"] = h1
@@ -866,9 +920,58 @@ def handle_rethink_headline():
     _edit_image(image_path, draft_path)
     if progress_msg_id:
         tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "✅ Done rethinking headline"})
-    set_keyboard(EDIT_KEYBOARD)
+    set_keyboard(MAIN_KEYBOARD)
     log_telemetry("headline:rethink", story=story)
     print(f"[HEADLINE:rethink] msg {MESSAGE_ID} → '{h1}' / '{h2}'", flush=True)
+
+
+def handle_rehighlight():
+    story = get_story()
+    if not story:
+        send_msg(CHAT_ID, "⚠️ Story data not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    h1 = story.get("headline_line1", "")
+    h2 = story.get("headline_line2", "")
+    image_path = story.get("image_path", "")
+    draft_path = story.get("draft_path", "")
+
+    # Use template_headline as the authoritative rendered text.
+    # headline_line1/2 may differ from what's actually on the image card.
+    full_headline = (story.get("template_headline") or "").strip() or f"{h1} {h2}".strip()
+
+    if not full_headline or not image_path:
+        send_msg(CHAT_ID, "⚠️ No headline or image found — generate image first.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    # Clear cached highlight so _render_current_template forces a fresh LLM pick
+    story.pop("template_highlight", None)
+
+    progress = tg("sendMessage", {"chat_id": CHAT_ID, "text": "\U0001f3a8 Re-picking highlights..."})
+    progress_msg_id = progress.get("result", {}).get("message_id")
+
+    # Pass full_headline as h1, empty h2 — renderer concatenates them anyway
+    ok, highlight = _render_current_template(story, full_headline, "", image_path)
+    if not ok:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "❌ Render failed"})
+        else:
+            send_msg(CHAT_ID, "❌ Render failed.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    story["template_highlight"] = highlight or ""
+    save_story(story)
+
+    _edit_image(image_path, draft_path)
+    hl_note = f": {highlight}" if highlight else ""
+    if progress_msg_id:
+        tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                               "text": f"✅ Re-highlighted{hl_note}"})
+    set_keyboard(MAIN_KEYBOARD)
+    print(f"[REHIGHLIGHT] msg {MESSAGE_ID} → '{highlight}'", flush=True)
 
 
 def handle_custom_headline():
@@ -926,19 +1029,34 @@ def handle_edit_text(mode):
         set_keyboard(MAIN_KEYBOARD)
         return
 
+    if len(new_text) > 1024:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+               "text": f"\u274c {label} failed: rewrite is {len(new_text)} chars (Telegram caption limit is 1024). Try again or use Shorter first."})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
     edit_path = _derive_edit_path(draft_path)
     Path(edit_path).write_text(new_text)
 
     story["draft_path"] = edit_path
     save_story(story)
 
-    subprocess.run([
+    edit_result = subprocess.run([
         "python3", str(NEWSROOM / "scripts/telegram_edit.py"),
         "--channel", "test",
         "--message-id", MESSAGE_ID,
         "--file", edit_path,
         "--caption",
     ], capture_output=True, text=True, env={**os.environ, "HOME": os.path.expanduser("~")})
+
+    if edit_result.returncode != 0:
+        err_detail = (edit_result.stderr or "").strip()[:200]
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+               "text": f"\u274c {label} rewrite succeeded but Telegram edit failed: {err_detail}"})
+        set_keyboard(MAIN_KEYBOARD)
+        return
 
     if progress_msg_id:
         tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": f"\u2705 Done applying {done_label}"})
@@ -999,13 +1117,19 @@ Rules:
     story["draft_path"] = edit_path
     save_story(story)
 
-    subprocess.run([
+    edit_result = subprocess.run([
         "python3", str(NEWSROOM / "scripts/telegram_edit.py"),
         "--channel", "test",
         "--message-id", MESSAGE_ID,
         "--file", edit_path,
         "--caption",
     ], capture_output=True, text=True, env={**os.environ, "HOME": os.path.expanduser("~")})
+
+    if edit_result.returncode != 0:
+        err_detail = (edit_result.stderr or "").strip()[:200]
+        send_msg(CHAT_ID, f"❌ Opinion append succeeded but Telegram edit failed: {err_detail}")
+        set_keyboard(MAIN_KEYBOARD)
+        return
 
     log_telemetry(f"opinion:{label_key}", story=story)
     set_keyboard(MAIN_KEYBOARD)
@@ -1043,18 +1167,18 @@ def handle_factcheck():
     )
     verdict_raw = (result.stdout or result.stderr or "No response").strip()
 
-    # Post full verdict to UPDATE_GROUP (split if exceeds Telegram 4096 limit)
+    # Post full verdict to NOTIF_GROUP (split if exceeds Telegram 4096 limit)
     header = f"<b>Fact-check: {title}</b>\n\n"
     max_first_chunk = 4096 - len(header) - 10
     if len(verdict_raw) <= max_first_chunk:
-        send_msg(UPDATE_GROUP, header + verdict_raw)
+        send_msg(NOTIF_GROUP, header + verdict_raw)
     else:
-        send_msg(UPDATE_GROUP, header + verdict_raw[:max_first_chunk])
+        send_msg(NOTIF_GROUP, header + verdict_raw[:max_first_chunk])
         remainder = verdict_raw[max_first_chunk:]
         while remainder:
             chunk = remainder[:4000]
             remainder = remainder[4000:]
-            send_msg(UPDATE_GROUP, chunk)
+            send_msg(NOTIF_GROUP, chunk)
 
     # Use full verdict for issue detection, truncated for LLM correction prompt
     verdict = verdict_raw[:3000]
@@ -1142,17 +1266,29 @@ def handle_newsource():
         send_msg(CHAT_ID, "⚠️ No title in story data.")
         return
 
-    send_msg(UPDATE_GROUP, f"🔎 Finding sources for: <b>{title}</b>...")
+    send_msg(CHAT_ID, "🔎 Searching for sources...")
 
-    result = subprocess.run(
-        ["gsearch", title, "--type", "news", "--time", "week", "--limit", "5"],
-        capture_output=True, text=True, timeout=30,
-        env={**os.environ, "HOME": os.path.expanduser("~")},
-    )
-    output = (result.stdout or "No results").strip()[:2000]
+    real_home = os.environ.get("ALEF_AGENT_REAL_HOME", "/Users/jbd")
+    try:
+        result = subprocess.run(
+            ["gsearch", title, "--type", "news", "--time", "week", "--limit", "5"],
+            capture_output=True, text=True, timeout=30,
+            env={**os.environ, "HOME": real_home},
+        )
+        output = (result.stdout or "").strip()
+        if not output:
+            output = result.stderr.strip() or "No results returned."
+    except subprocess.TimeoutExpired:
+        output = "Search timed out."
+    except FileNotFoundError:
+        output = "gsearch not found — check PATH."
+
+    output = output[:2000]
     log_telemetry("newsource", story=story)
     current = f"\nCurrent source: {source_url}" if source_url else ""
-    send_msg(UPDATE_GROUP, f"<b>Sources for: {title}</b>{current}\n\n<pre>{output}</pre>")
+    msg = f"<b>Sources for: {title}</b>{current}\n\n<pre>{output}</pre>"
+    send_msg(CHAT_ID, msg)
+    send_msg(NOTIF_GROUP, msg)
     print(f"[NEWSOURCE] msg {MESSAGE_ID}", flush=True)
 
 
@@ -1210,7 +1346,7 @@ def handle_reply_headline():
         return
 
     template_name = story.get("current_template", "dark-editorial")
-    category = story.get("template_category") or "AI"
+    category = story.get("template_category") or _derive_category(story)
     subline = story.get("template_subline", "")
     if not subline:
         subline = _derive_subline(story.get("draft_path", ""))
@@ -1255,7 +1391,7 @@ def handle_reply_headline():
         tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
             "text": f"✅ Done applying custom headline{hl_note}"})
 
-    set_keyboard(EDIT_KEYBOARD)
+    set_keyboard(MAIN_KEYBOARD)
     log_telemetry("headline:custom_applied", story=story)
     print(f"[HEADLINE:custom] msg {MESSAGE_ID} \u2192 '{headline_clean}' hl={highlight_csv}", flush=True)
 
@@ -1264,6 +1400,7 @@ DISPATCH = {
     "nr_approve":       handle_approve,
     "nr_drop":          handle_drop,
     **{f"nr_drop_{k}": (lambda k=k: handle_drop_reason(k)) for k in DROP_REASON_LABELS},
+    "nr_noop":          lambda: None,
     "nr_edit":          handle_edit,
     "nr_back":          handle_back,
     # Fact check + source
@@ -1277,6 +1414,7 @@ DISPATCH = {
     "nr_img_t3":        lambda: handle_image_template("t3"),
     # Headline tools
     "nr_rethink_headline": handle_rethink_headline,
+    "nr_rehighlight":      handle_rehighlight,
     "nr_custom_headline":  handle_custom_headline,
     "nr_reply_headline":   handle_reply_headline,
     # Text rewrites

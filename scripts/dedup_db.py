@@ -485,6 +485,15 @@ class DedupDB:
             except sqlite3.OperationalError:
                 pass  # FTS might not be available
 
+            # Mark matching seen_articles rows as published so cross_scan_dedup Layer 2 fires
+            if source_url:
+                norm = normalize_url(source_url)
+                if norm:
+                    conn.execute(
+                        "UPDATE seen_articles SET status='published' WHERE url_normalized = ?",
+                        (norm,)
+                    )
+
             # Extract and store entities
             entities = self._extract_entities(title)
             for entity in entities:

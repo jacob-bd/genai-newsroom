@@ -26,7 +26,8 @@ def get_channel_id(channel_arg):
     mapping = {
         "live": "-1003300061793",
         "test": "-1003889167143",
-        "group": "-1003682312998"
+        "group": "-1003682312998",
+        "notif": "-1003853245974"
     }
     return mapping.get(channel_arg, channel_arg)
 

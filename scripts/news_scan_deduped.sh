@@ -524,6 +524,43 @@ else
   fi
 fi
 
+# ── Build scan health block ----------------------------------------
+_status_icon() {
+  case "${1%%:*}" in
+    ok)    echo "✅" ;;
+    warn)  echo "⚠️ " ;;
+    skip)  echo "⚠️ " ;;
+    error) echo "❌" ;;
+    *)     echo "❓" ;;
+  esac
+}
+_status_label() {
+  local val="${1#*:}"
+  case "${1%%:*}" in
+    ok)    echo "$val articles" ;;
+    warn)  echo "0 (no results)" ;;
+    skip)  echo "skipped ($val)" ;;
+    error) echo "error: $val" ;;
+    *)     echo "unknown" ;;
+  esac
+}
+
+SCAN_TIME="$(date +'%b %-d %-I:%M %p') ET"
+FILTERED=$((TOTAL_CANDIDATES - ${SCORED_COUNT:-0}))
+
+HEALTH_BLOCK="📊 SCAN HEALTH — ${SCAN_TIME}
+$(_status_icon "$SS_rss") RSS (blogwatcher): $(_status_label "$SS_rss")
+$(_status_icon "$SS_reddit") Reddit: $(_status_label "$SS_reddit")
+$(_status_icon "$SS_twitter_api") twitterapi.io: $(_status_label "$SS_twitter_api")
+$(_status_icon "$SS_twitter_cli") Twitter CLI: $(_status_label "$SS_twitter_cli")
+$(_status_icon "$SS_github") GitHub trending: $(_status_label "$SS_github")
+$(_status_icon "$SS_tavily") Tavily web: $(_status_label "$SS_tavily")
+$(_status_icon "$SS_gsearch") Google Search: $(_status_label "$SS_gsearch")
+$(_status_icon "$SS_digg") Digg AI: $(_status_label "$SS_digg")
+----------------------------------------
+🔢 ${TOTAL_CANDIDATES} raw → ${SCORED_COUNT:-0} scored → ${PICKS_COUNT} candidates
+🗑️  Filtered: ${FILTERED} (dedup + low score)"
+
 # ----------------------------------------
 # AUTO-DRAFT: Council review → Draft → Post to test channel
 # ----------------------------------------
@@ -620,6 +657,9 @@ output.append("\n🚀 Auto-drafting initiated...")
 print("\n".join(output))
 EOF
 )
+      NOTIFICATION_TEXT="${NOTIFICATION_TEXT}
+
+${HEALTH_BLOCK}"
       python3 "$SCRIPT_DIR/telegram_post.py" \
         --channel "-1003682312998" \
         --text "$NOTIFICATION_TEXT" >/dev/null 2>&1 || true
@@ -656,43 +696,6 @@ if [ -f "$PERSISTENT_PICKS" ]; then
 fi
 echo "{\"_scan_meta\": {\"scan_time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"top_n\": $TOP_N}}" > "$PERSISTENT_PICKS"
 cat "$PICKS_FILE" >> "$PERSISTENT_PICKS" 2>/dev/null
-
-# ── Build scan health block ----------------------------------------
-_status_icon() {
-  case "${1%%:*}" in
-    ok)    echo "✅" ;;
-    warn)  echo "⚠️ " ;;
-    skip)  echo "⚠️ " ;;
-    error) echo "❌" ;;
-    *)     echo "❓" ;;
-  esac
-}
-_status_label() {
-  local val="${1#*:}"
-  case "${1%%:*}" in
-    ok)    echo "$val articles" ;;
-    warn)  echo "0 (no results)" ;;
-    skip)  echo "skipped ($val)" ;;
-    error) echo "error: $val" ;;
-    *)     echo "unknown" ;;
-  esac
-}
-
-SCAN_TIME="$(date +'%b %-d %-I:%M %p') ET"
-FILTERED=$((TOTAL_CANDIDATES - ${SCORED_COUNT:-0}))
-
-HEALTH_BLOCK="📊 SCAN HEALTH — ${SCAN_TIME}
-$(_status_icon "$SS_rss") RSS (blogwatcher): $(_status_label "$SS_rss")
-$(_status_icon "$SS_reddit") Reddit: $(_status_label "$SS_reddit")
-$(_status_icon "$SS_twitter_api") twitterapi.io: $(_status_label "$SS_twitter_api")
-$(_status_icon "$SS_twitter_cli") Twitter CLI: $(_status_label "$SS_twitter_cli")
-$(_status_icon "$SS_github") GitHub trending: $(_status_label "$SS_github")
-$(_status_icon "$SS_tavily") Tavily web: $(_status_label "$SS_tavily")
-$(_status_icon "$SS_gsearch") Google Search: $(_status_label "$SS_gsearch")
-$(_status_icon "$SS_digg") Digg AI: $(_status_label "$SS_digg")
-----------------------------------------
-🔢 ${TOTAL_CANDIDATES} raw → ${SCORED_COUNT:-0} scored → ${PICKS_COUNT} candidates
-🗑️  Filtered: ${FILTERED} (dedup + low score)"
 
 echo "$HEALTH_BLOCK"
 echo ""

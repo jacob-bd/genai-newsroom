@@ -25,13 +25,13 @@ SCRIPT_DIR = Path(__file__).parent
 MEMORY_DIR = SCRIPT_DIR.parent / "data"
 EDITORIAL_PROFILE = MEMORY_DIR / "editorial_profile.md"
 
-GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
+GEMINI_MODEL = "gemini-3-flash-preview"
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
     f"{GEMINI_MODEL}:generateContent"
 )
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_MODEL = "x-ai/grok-4.1-fast"
+OPENROUTER_MODEL = "x-ai/grok-4.3"
 
 
 def load_profile():

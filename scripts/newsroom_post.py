@@ -39,7 +39,8 @@ WORKSPACE = Path(os.path.expanduser("~/.alef-agent/workspace"))
 PENDING_FILE = WORKSPACE / "newsroom/data/newsroom_pending.json"
 WHITEBOARD = WORKSPACE / "newsroom/data/newsroom_whiteboard.md"
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-UPDATE_GROUP = "-1003682312998"
+UPDATE_GROUP = "-1003682312998"   # newsroom channel — council summary only
+NOTIF_GROUP = "-1003853245974"    # notifications channel — everything else
 TEST_CHAT = "-1003889167143"
 
 # Full Telegram-allowed reaction set (keep in sync with telegram_post.py)
@@ -108,15 +109,16 @@ def notify_update_group(msg_id: str, slug: str):
         return
     url = f"https://t.me/c/3889167143/{msg_id}"
     text = f"Draft posted: <a href='{url}'>{slug}</a>\nTap ✅ Approve, ✏️ Edit, or 🗑 Drop."
-    try:
-        requests.post(
-            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-            json={"chat_id": UPDATE_GROUP, "text": text, "parse_mode": "HTML",
-                  "disable_web_page_preview": True},
-            timeout=10,
-        )
-    except Exception as e:
-        print(f"[warn] Update group notify failed: {e}", flush=True)
+    for chat_id in (UPDATE_GROUP, NOTIF_GROUP):
+        try:
+            requests.post(
+                f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                json={"chat_id": chat_id, "text": text, "parse_mode": "HTML",
+                      "disable_web_page_preview": True},
+                timeout=10,
+            )
+        except Exception as e:
+            print(f"[warn] Update group notify failed ({chat_id}): {e}", flush=True)
 
 
 def main():
