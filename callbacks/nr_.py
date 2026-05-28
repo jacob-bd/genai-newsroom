@@ -10,6 +10,8 @@ Handles: nr_approve, nr_drop, nr_edit, nr_back,
          nr_op_signal, nr_op_room, nr_op_tell,
          nr_buf_queue, nr_buf_publish, nr_buf_draft, nr_buf_skip,
          nr_factcheck, nr_newsource,
+         nr_rethink_subline,
+         nr_enrich, nr_enrich_rewrite, nr_enrich_append,
          nr_drop_stale, nr_drop_beliefs, nr_drop_boring, nr_drop_unverifiable,
          nr_drop_duplicate, nr_drop_fatigue, nr_drop_niche, nr_drop_clickbait.
 
@@ -104,6 +106,7 @@ MAIN_KEYBOARD = [
      {"text": "\U0001f5d1 Drop", "callback_data": "nr_drop"}],
     [{"text": "\U0001f50d Fact Check", "callback_data": "nr_factcheck"},
      {"text": "\U0001f50e New Source", "callback_data": "nr_newsource"}],
+    [{"text": "⚡ Enrich", "callback_data": "nr_enrich"}],
     [{"text": "✏️ Edit", "callback_data": "nr_edit"}],
 ]
 DROP_REASON_LABELS = {
@@ -131,9 +134,10 @@ EDIT_KEYBOARD = [
      {"text": "\U0001f525 Punchier", "callback_data": "nr_edit_punchier"}],
     [{"text": "\U0001f4f0 Rewrite", "callback_data": "nr_edit_rewrite"},
      {"text": "\U0001f608 Snarky", "callback_data": "nr_edit_snarky"}],
+    [{"text": "\U0001f504 Rethink Headline", "callback_data": "nr_rethink_headline"},
+     {"text": "\U0001f4a1 Rethink Subline", "callback_data": "nr_rethink_subline"}],
     [{"text": "\U0001f4ac Add Opinion", "callback_data": "nr_edit_opinion"},
-     {"text": "\U0001f504 Rethink Headline", "callback_data": "nr_rethink_headline"}],
-    [{"text": "✏️ Custom Headline", "callback_data": "nr_custom_headline"}],
+     {"text": "✏️ Custom Headline", "callback_data": "nr_custom_headline"}],
     [{"text": "« Back", "callback_data": "nr_back"}],
 ]
 IMAGE_KEYBOARD = [
@@ -162,6 +166,11 @@ BUFFER_VIDEO_KEYBOARD = [
 ]
 BUFFER_PROCESSING_KEYBOARD = [
     [{"text": "⏳ Pushing to Buffer...", "callback_data": "nr_noop"}],
+]
+ENRICH_KEYBOARD = [
+    [{"text": "✍️ Enrich + Rewrite", "callback_data": "nr_enrich_rewrite"}],
+    [{"text": "➕ Enrich + Append", "callback_data": "nr_enrich_append"}],
+    [{"text": "« Back", "callback_data": "nr_back"}],
 ]
 
 OPINION_LABEL_MAP = {
@@ -1292,6 +1301,280 @@ def handle_newsource():
     print(f"[NEWSOURCE] msg {MESSAGE_ID}", flush=True)
 
 
+def handle_rethink_subline():
+    story = get_story()
+    if not story:
+        send_msg(CHAT_ID, "⚠️ Story data not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    draft_path = story.get("draft_path", "")
+    image_path = story.get("image_path", "")
+
+    if not image_path:
+        send_msg(CHAT_ID, "⚠️ No image found — generate image first.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    try:
+        raw = Path(draft_path).read_text()
+        plain = re.sub(r'<[^>]+>', '', raw).strip()
+    except Exception:
+        plain = ""
+
+    if not plain:
+        send_msg(CHAT_ID, "⚠️ Draft file not found or empty.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    progress = tg("sendMessage", {"chat_id": CHAT_ID, "text": "\U0001f4a1 Rethinking subline..."})
+    progress_msg_id = progress.get("result", {}).get("message_id")
+
+    headline = story.get("template_headline", "")
+    prompt = (
+        "Write a punchy subline for a news card image. "
+        "Max 55 characters. Must add NEW information not already in the headline. "
+        "CRITICAL: Be hyper-specific. Name the exact company, cite the exact dollar amount, "
+        "name the exact model, or state the exact consequence. "
+        "AVOID generic phrases like 'major impact', 'significant change', 'industry shift'. "
+        "PREFER specific facts like '$1.2B deal', 'GPT-5 rival', '40% cost cut', '3 countries affected'. "
+        "No em-dashes. No quotes. Fragments preferred. "
+        "Return ONLY the subline text, nothing else."
+    )
+    new_subline, err = call_llm(prompt, f"Headline: {headline}\n\nPost body:\n{plain[:800]}")
+
+    if err or not new_subline:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                "text": "❌ Subline generation failed."})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    new_subline = new_subline.strip().strip('"\'')[:60]
+    # Clear old cached subline and lock in new one before render
+    story["template_subline"] = new_subline
+    save_story(story)
+
+    # Re-render with new subline, headline untouched
+    full_headline = story.get("template_headline", "")
+    h1 = story.get("headline_line1", full_headline)
+    h2 = story.get("headline_line2", "")
+    ok, _ = _render_current_template(story, h1, h2, image_path)
+
+    if not ok:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "❌ Render failed."})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    _edit_image(image_path, draft_path)
+
+    if progress_msg_id:
+        tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+            "text": f"✅ New subline: {new_subline}"})
+
+    log_telemetry("subline:rethink", story=story)
+    set_keyboard(MAIN_KEYBOARD)
+    print(f"[SUBLINE:rethink] msg {MESSAGE_ID} → '{new_subline}'", flush=True)
+
+
+def _enrich_search(title):
+    """Run GSearch + Perplexity on topic, return combined research text."""
+    real_home = os.environ.get("ALEF_AGENT_REAL_HOME", "/Users/jbd")
+    results = []
+
+    try:
+        r = subprocess.run(
+            ["gsearch", title, "--type", "news", "--time", "week", "--limit", "5"],
+            capture_output=True, text=True, timeout=30,
+            env={**os.environ, "HOME": real_home},
+        )
+        if r.stdout.strip():
+            results.append(f"=== GSEARCH ===\n{r.stdout.strip()[:1500]}")
+    except Exception as e:
+        results.append(f"[gsearch error: {e}]")
+
+    try:
+        query = f"Additional facts, statistics, context, and recent developments about: {title}"
+        r = subprocess.run(
+            ["pwm", "ask", query],
+            capture_output=True, text=True, timeout=90,
+            env={**os.environ, "HOME": real_home},
+        )
+        if r.stdout.strip():
+            results.append(f"=== PERPLEXITY ===\n{r.stdout.strip()[:2000]}")
+    except Exception as e:
+        results.append(f"[perplexity error: {e}]")
+
+    return "\n\n".join(results)
+
+
+def handle_enrich():
+    """Show enrich sub-menu (Rewrite vs Append)."""
+    set_keyboard(ENRICH_KEYBOARD)
+
+
+def handle_enrich_rewrite():
+    """Search for more info, then fully rewrite the post incorporating it."""
+    story = get_story()
+    if not story:
+        send_msg(CHAT_ID, "⚠️ Story data not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    draft_path = story.get("draft_path")
+    if not draft_path or not Path(draft_path).exists():
+        send_msg(CHAT_ID, "⚠️ Draft file not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    title = story.get("title", "")
+    progress = tg("sendMessage", {"chat_id": CHAT_ID, "text": "⚡ Enriching (searching + rewriting)..."})
+    progress_msg_id = progress.get("result", {}).get("message_id")
+
+    research = _enrich_search(title)
+    if not research.strip():
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                "text": "❌ Search returned nothing."})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    original = Path(draft_path).read_text()
+    prompt = (
+        "You are enriching a Telegram news post with fresh research. "
+        "Rewrite the FULL post incorporating the most important NEW facts, stats, or context from the research. "
+        "Rules: preserve HTML structure (headline, body, Read more, hashtags). "
+        "Keep same Jacob voice — punchy, blunt, no corporate polish. "
+        "CRITICAL: output must be under 1000 characters total. Cut words if needed. "
+        "No em-dashes. No banned AI filler words. Return ONLY the rewritten post.\n\n"
+        f"=== RESEARCH ===\n{research[:2000]}"
+    )
+    new_text, err = call_llm(prompt, original)
+
+    if err:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                "text": f"❌ Rewrite failed: {err[:100]}"})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    if len(new_text) > 1024:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+               "text": f"❌ Rewrite is {len(new_text)} chars (limit 1024). Try Shorter first, then Enrich."})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    edit_path = _derive_edit_path(draft_path)
+    Path(edit_path).write_text(new_text)
+    story["draft_path"] = edit_path
+    save_story(story)
+
+    subprocess.run([
+        "python3", str(NEWSROOM / "scripts/telegram_edit.py"),
+        "--channel", "test",
+        "--message-id", MESSAGE_ID,
+        "--file", edit_path,
+        "--caption",
+    ], capture_output=True, text=True, env={**os.environ, "HOME": os.path.expanduser("~")})
+
+    if progress_msg_id:
+        tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+            "text": "✅ Enriched (rewrite)"})
+
+    log_telemetry("enrich:rewrite", story=story)
+    set_keyboard(MAIN_KEYBOARD)
+    print(f"[ENRICH:rewrite] msg {MESSAGE_ID}", flush=True)
+
+
+def handle_enrich_append():
+    """Search for more info, then append a context block to the post."""
+    story = get_story()
+    if not story:
+        send_msg(CHAT_ID, "⚠️ Story data not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    draft_path = story.get("draft_path")
+    if not draft_path or not Path(draft_path).exists():
+        send_msg(CHAT_ID, "⚠️ Draft file not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    title = story.get("title", "")
+    original = Path(draft_path).read_text()
+    remaining = 1024 - len(original)
+
+    if remaining < 80:
+        send_msg(CHAT_ID, f"❌ Post too long ({len(original)} chars) to append. Use Shorter first, then Enrich.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    progress = tg("sendMessage", {"chat_id": CHAT_ID, "text": "⚡ Enriching (searching + appending)..."})
+    progress_msg_id = progress.get("result", {}).get("message_id")
+
+    research = _enrich_search(title)
+    if not research.strip():
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                "text": "❌ Search returned nothing."})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    max_block = remaining - 50
+    prompt = (
+        f"Write ONLY an additional context block to insert into a Telegram news post. "
+        f"Max {max_block} characters total for this block. "
+        "Start with: <b>\U0001f4cc More context:</b>\\n\\n"
+        "Include 1-2 specific NEW facts, stats, or angles from the research. "
+        "Each fact on its own line with a blank line between. "
+        "No HTML links. No em-dashes. Punchy fragments only. "
+        "Return ONLY the block to insert, nothing else.\n\n"
+        f"=== RESEARCH ===\n{research[:2000]}"
+    )
+    block, err = call_llm(prompt, f"ORIGINAL POST:\n{original}")
+
+    if err:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                "text": f"❌ Append failed: {err[:100]}"})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    if "Read more:" in original:
+        new_text = original.replace("Read more:", f"{block.strip()}\n\nRead more:", 1)
+    else:
+        new_text = original.rstrip() + f"\n\n{block.strip()}"
+
+    if len(new_text) > 1024:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+               "text": f"❌ Result is {len(new_text)} chars (limit 1024). Use Shorter first, then Enrich."})
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    edit_path = _derive_edit_path(draft_path)
+    Path(edit_path).write_text(new_text)
+    story["draft_path"] = edit_path
+    save_story(story)
+
+    subprocess.run([
+        "python3", str(NEWSROOM / "scripts/telegram_edit.py"),
+        "--channel", "test",
+        "--message-id", MESSAGE_ID,
+        "--file", edit_path,
+        "--caption",
+    ], capture_output=True, text=True, env={**os.environ, "HOME": os.path.expanduser("~")})
+
+    if progress_msg_id:
+        tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+            "text": "✅ Enriched (appended)"})
+
+    log_telemetry("enrich:append", story=story)
+    set_keyboard(MAIN_KEYBOARD)
+    print(f"[ENRICH:append] msg {MESSAGE_ID}", flush=True)
+
 
 def _register_reply(chat_id, action, message_id):
     """Register a pending reply expectation for the daemon's script reply dispatcher."""
@@ -1412,11 +1695,16 @@ DISPATCH = {
     "nr_img_t1":        lambda: handle_image_template("t1"),
     "nr_img_t2":        lambda: handle_image_template("t2"),
     "nr_img_t3":        lambda: handle_image_template("t3"),
-    # Headline tools
+    # Headline + subline tools
     "nr_rethink_headline": handle_rethink_headline,
+    "nr_rethink_subline":  handle_rethink_subline,
     "nr_rehighlight":      handle_rehighlight,
     "nr_custom_headline":  handle_custom_headline,
     "nr_reply_headline":   handle_reply_headline,
+    # Enrich sub-menu
+    "nr_enrich":           handle_enrich,
+    "nr_enrich_rewrite":   handle_enrich_rewrite,
+    "nr_enrich_append":    handle_enrich_append,
     # Text rewrites
     "nr_edit_shorter":  lambda: handle_edit_text("shorter"),
     "nr_edit_punchier": lambda: handle_edit_text("punchier"),
