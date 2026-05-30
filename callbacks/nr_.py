@@ -134,8 +134,6 @@ def get_edit_keyboard(story):
         return f"{icon}{text}"
 
     return [
-        [{"text": "\U0001f5bc New image", "callback_data": "nr_edit_image"},
-         {"text": "\U0001f3a8 Re-highlight", "callback_data": "nr_rehighlight"}],
         [{"text": label("shorter", "✂️ Shorter"), "callback_data": "nr_toggle_shorter"},
          {"text": label("punchier", "🔥 Punchier"), "callback_data": "nr_toggle_punchier"}],
         [{"text": label("rewrite", "📰 Rewrite"), "callback_data": "nr_toggle_rewrite"},
@@ -143,9 +141,11 @@ def get_edit_keyboard(story):
         [{"text": label("simplify", "📖 Simplify"), "callback_data": "nr_toggle_simplify"},
          {"text": label("headline", "🔄 Rethink Headline"), "callback_data": "nr_toggle_headline"}],
         [{"text": label("subline", "💡 Rethink Subline"), "callback_data": "nr_toggle_subline"},
-         {"text": label("opinion", "💬 Add Opinion"), "callback_data": "nr_toggle_opinion"}],
-        [{"text": "✏️ Custom Headline", "callback_data": "nr_custom_headline"}],
-        [{"text": "🚀 Submit Edits", "callback_data": "nr_edit_submit"},
+         {"text": label("highlight", "🖍 Re-highlight"), "callback_data": "nr_toggle_highlight"}],
+        [{"text": label("opinion", "💬 Add Opinion"), "callback_data": "nr_toggle_opinion"}],
+        [{"text": "✏️ Custom Headline", "callback_data": "nr_custom_headline"},
+         {"text": "🖼 New image", "callback_data": "nr_edit_image"}],
+        [{"text": "🟢 Submit Edits", "callback_data": "nr_edit_submit"},
          {"text": "« Back", "callback_data": "nr_back"}],
     ]
 IMAGE_KEYBOARD = [
@@ -1197,7 +1197,7 @@ def handle_edit_submit():
                 "The following Telegram news post is too long and exceeds the 1024-character system limit. "
                 "You MUST shorten it aggressively to fit. \n\n"
                 "STRICT RULES:\n"
-                "- The body text (excluding the bold headline, opinion block, and footer) must be AT MOST 2 sentences total.\n"
+                "- The body text (excluding the bold headline, opinion block, and footer) must be AT MOST 3 sentences total.\n"
                 "- Drop any background context, secondary details, or descriptive adjectives.\n"
                 "- Keep the bold headline, the opinion block (if present), the 'Read more' line, and the hashtags.\n"
                 "- Preserve all HTML tags exactly.\n"
@@ -1242,11 +1242,18 @@ def handle_edit_submit():
             story["template_subline"] = subline
             card_changed = True
 
-    if card_changed or "headline" in active or "subline" in active:
+    if "highlight" in active:
+        headline = story.get("template_headline") or f"{story.get('headline_line1','')} {story.get('headline_line2','')}"
+        highlight = _ai_pick_highlight(headline)
+        if highlight:
+            story["template_highlight"] = highlight
+            card_changed = True
+
+    if card_changed or "headline" in active or "subline" in active or "highlight" in active:
         h1 = story.get("headline_line1", "")
         h2 = story.get("headline_line2", "")
         ok, highlight = _render_current_template(story, h1, h2, story.get("image_path", ""))
-        if ok and highlight:
+        if ok and highlight and "highlight" not in active: # keep the generated highlight unless explicitly requested to rethink
             story["template_highlight"] = highlight
         save_story(story)
 
@@ -2080,6 +2087,7 @@ DISPATCH = {
     "nr_toggle_headline":  lambda: handle_toggle("headline"),
     "nr_toggle_subline":   lambda: handle_toggle("subline"),
     "nr_toggle_opinion":   lambda: handle_toggle("opinion"),
+    "nr_toggle_highlight": lambda: handle_toggle("highlight"),
     "nr_edit_submit":      handle_edit_submit,
     "nr_edit_shorter":   lambda: handle_edit_text("shorter"),
     "nr_edit_punchier":  lambda: handle_edit_text("punchier"),
