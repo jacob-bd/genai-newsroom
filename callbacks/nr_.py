@@ -105,8 +105,7 @@ MAIN_KEYBOARD = [
     [{"text": "✅ Approve", "callback_data": "nr_approve"},
      {"text": "\U0001f5d1 Drop", "callback_data": "nr_drop"}],
     [{"text": "\U0001f50d Fact Check", "callback_data": "nr_factcheck"},
-     {"text": "\U0001f50e New Source", "callback_data": "nr_newsource"}],
-    [{"text": "⚡ Enrich", "callback_data": "nr_enrich"}],
+     {"text": "⚡ Enrich", "callback_data": "nr_enrich"}],
     [{"text": "✏️ Edit", "callback_data": "nr_edit"}],
 ]
 DROP_REASON_LABELS = {
@@ -134,6 +133,7 @@ EDIT_KEYBOARD = [
      {"text": "\U0001f525 Punchier", "callback_data": "nr_edit_punchier"}],
     [{"text": "\U0001f4f0 Rewrite", "callback_data": "nr_edit_rewrite"},
      {"text": "\U0001f608 Snarky", "callback_data": "nr_edit_snarky"}],
+    [{"text": "\U0001f4d6 Simplify", "callback_data": "nr_edit_simplify"}],
     [{"text": "\U0001f504 Rethink Headline", "callback_data": "nr_rethink_headline"},
      {"text": "\U0001f4a1 Rethink Subline", "callback_data": "nr_rethink_subline"}],
     [{"text": "\U0001f4ac Add Opinion", "callback_data": "nr_edit_opinion"},
@@ -203,6 +203,7 @@ TEXT_PROMPTS = {
     "shorter":  "Trim this Telegram news post to about 70% of its current length. Keep all key facts. Preserve all HTML tags exactly. Return only the rewritten text.",
     "punchier": "Rewrite this post to be more punchy and impactful. Keep same facts and structure. Preserve all HTML tags. CRITICAL: output must be under 950 characters total. Return only the rewritten text.",
     "rewrite":  "Fully rewrite this post with a fresh angle. Keep same facts. Preserve all HTML tags. CRITICAL: output must be under 950 characters total. Return only the rewritten text.",
+    "simplify": "Rewrite this post for a general audience. Rules: (1) Spell out every acronym on first use, e.g. 'LLM (Large Language Model)'. (2) Replace technical jargon with plain English equivalents. (3) Keep every fact, all HTML tags, and the same structure. (4) Do NOT dumb it down — just make it accessible. (5) Output must be under 1000 characters. Return only the rewritten text.",
     "snarky":   f"""Rewrite this Telegram news post in Jacob's voice: sharp, blunt, zero corporate polish.
 
 Rules:
@@ -604,6 +605,86 @@ def handle_edit_image():
     set_keyboard(IMAGE_KEYBOARD)
 
 
+HIGHLIGHT_STOPWORDS = {
+    "a", "an", "the", "and", "or", "but", "for", "from", "with", "without",
+    "to", "of", "on", "in", "at", "by", "as", "is", "are", "was", "were",
+    "be", "being", "been", "this", "that", "these", "those", "its", "their",
+    "your", "our", "new", "now", "says", "said", "launches", "launch",
+    "unveils", "unveil", "announces", "announce", "ai", "startup", "startups",
+    "offers", "offer", "free", "records", "record", "everything", "train",
+    "training", "data",
+}
+
+
+def _highlight_terms_valid(highlight, headline):
+    """Return valid comma-separated highlight terms that exist in headline."""
+    if not highlight or not headline:
+        return ""
+    hl_upper = headline.upper()
+    valid = []
+    seen = set()
+    for term in highlight.split(","):
+        term = term.strip().strip('"\'')
+        if not term:
+            continue
+        if len(term.split()) > 2 or len(term) > 20:
+            continue
+        idx = hl_upper.find(term.upper())
+        if idx < 0:
+            continue
+        exact = headline[idx:idx + len(term)]
+        key = exact.upper()
+        if key not in seen:
+            valid.append(exact)
+            seen.add(key)
+    return ",".join(valid)
+
+
+def _fallback_highlight_terms(headline):
+    """Pick useful highlight terms without LLM so cards never render all-white."""
+    tokens = list(re.finditer(r"[A-Za-z0-9$][A-Za-z0-9$%.\-]*", headline or ""))
+    words = []
+    for match in tokens:
+        word = match.group(0)
+        lower = word.lower().strip(".,!?:;")
+        if lower in HIGHLIGHT_STOPWORDS or len(lower) < 3:
+            continue
+        words.append((word, match.start(), match.end()))
+
+    candidates = []
+    for word, start, end in words:
+        score = 2
+        if any(ch.isdigit() for ch in word) or word.startswith("$"):
+            score += 8
+        if word[:1].isupper() or any(ch.isupper() for ch in word[1:]):
+            score += 3
+        if len(word) >= 6:
+            score += 1
+        candidates.append((score, start, word))
+
+    for (w1, s1, e1), (w2, s2, e2) in zip(words, words[1:]):
+        between = headline[e1:s2]
+        phrase = headline[s1:e2]
+        if "," in between or len(phrase) > 20:
+            continue
+        score = 7
+        if any(ch.isdigit() for ch in phrase) or "$" in phrase:
+            score += 8
+        candidates.append((score, s1, phrase))
+
+    picked = []
+    used_spans = []
+    for _, start, term in sorted(candidates, key=lambda item: (-item[0], item[1])):
+        end = start + len(term)
+        if any(not (end <= a or start >= b) for a, b in used_spans):
+            continue
+        picked.append(term)
+        used_spans.append((start, end))
+        if len(picked) == 3:
+            break
+    return ",".join(picked)
+
+
 def _ai_pick_highlight(headline):
     """Use LLM to pick 1-3 SHORT key terms to highlight in hot-pink."""
     prompt = (
@@ -617,21 +698,27 @@ def _ai_pick_highlight(headline):
     )
     result, err = call_llm(prompt, headline)
     if err or not result:
-        return ""
+        return _fallback_highlight_terms(headline)
     raw = result.strip().strip('"\'')
     if not raw:
-        return ""
-    hl_upper = headline.upper()
-    valid = []
-    for term in raw.split(","):
-        term = term.strip().strip('"\'')
-        # Reject: not a substring, more than 2 words, or longer than 20 chars
-        if (term and term.upper() in hl_upper
-                and len(term.split()) <= 2
-                and len(term) <= 20):
-            idx = hl_upper.find(term.upper())
-            valid.append(headline[idx:idx + len(term)])
-    return ",".join(valid) if valid else ""
+        return _fallback_highlight_terms(headline)
+    valid = _highlight_terms_valid(raw, headline)
+    fallback = _fallback_highlight_terms(headline)
+    if not valid:
+        return fallback
+
+    picked = valid.split(",")
+    for term in fallback.split(","):
+        if not term:
+            continue
+        if term.upper() in {p.upper() for p in picked}:
+            continue
+        if any(term.upper() in p.upper() or p.upper() in term.upper() for p in picked):
+            continue
+        picked.append(term)
+        if len(picked) == 3:
+            break
+    return ",".join(picked)
 
 
 CATEGORY_TAGS = [
@@ -763,8 +850,9 @@ def handle_image_template(template_key):
             save_story(story)
 
     _raw_hl = story.get("template_highlight", "")
-    if _raw_hl and _raw_hl.upper() in headline.upper():
-        highlight = _raw_hl
+    cached_highlight = _highlight_terms_valid(_raw_hl, headline)
+    if cached_highlight:
+        highlight = cached_highlight
     else:
         highlight = _ai_pick_highlight(headline)
         if highlight:
@@ -855,10 +943,11 @@ def _render_current_template(story, h1, h2, image_path):
         subline = _derive_subline(story.get("draft_path", ""))
         if subline:
             story["template_subline"] = subline
-    _raw_hl = story.get("template_highlight", "")
     headline = f"{h1} {h2}"
-    if _raw_hl and _raw_hl.upper() in headline.upper():
-        highlight = _raw_hl
+    _raw_hl = story.get("template_highlight", "")
+    cached_highlight = _highlight_terms_valid(_raw_hl, headline)
+    if cached_highlight:
+        highlight = cached_highlight
     else:
         highlight = _ai_pick_highlight(headline)
     render_script = NEWSROOM / "skills/news-cards/render.mjs"
@@ -1022,13 +1111,27 @@ def handle_edit_text(mode):
         set_keyboard(MAIN_KEYBOARD)
         return
 
-    MODE_LABELS = {"shorter": ("Shortening", "shorter style"), "punchier": ("Punching up", "punchier style"), "rewrite": ("Rewriting", "full rewrite"), "snarky": ("Snarkifying", "snarky style")}
+    MODE_LABELS = {"shorter": ("Shortening", "shorter style"), "punchier": ("Punching up", "punchier style"), "rewrite": ("Rewriting", "full rewrite"), "snarky": ("Snarkifying", "snarky style"), "simplify": ("Simplifying", "plain English")}
     label, done_label = MODE_LABELS.get(mode, (mode.capitalize(), mode))
     progress = tg("sendMessage", {"chat_id": CHAT_ID, "text": f"\u270f\ufe0f {label}..."})
     progress_msg_id = progress.get("result", {}).get("message_id")
 
     original = Path(draft_path).read_text()
-    new_text, err = call_llm(TEXT_PROMPTS[mode], original)
+    if mode == "shorter":
+        target_chars = min(int(len(original) * 0.65), 900)
+        prompt = (
+            f"Cut this Telegram news post to under {target_chars} characters (currently {len(original)} chars — cut at least 35%). "
+            "Be aggressive: remove filler sentences, background context, and anything not essential to the core news fact. "
+            "Keep the headline, the single most important stat or claim, the Read more link, and the hashtags. "
+            "Preserve all HTML tags.\n\n"
+            "CRITICAL SYSTEM REQUIREMENT: The total output MUST be strictly under 950 characters. "
+            "If it exceeds 1024 characters, the system will crash and fail. "
+            "Be extremely ruthless: drop secondary sentences, merge clauses, and prune adjectives to ensure it is very short. "
+            "Return only the rewritten text, nothing else."
+        )
+    else:
+        prompt = TEXT_PROMPTS[mode]
+    new_text, err = call_llm(prompt, original)
 
     if err:
         if progress_msg_id:
@@ -1162,15 +1265,24 @@ def handle_factcheck():
     progress_msg_id = progress.get("result", {}).get("message_id")
 
     plain = re.sub(r'<[^>]+>', '', Path(draft_path).read_text()).strip()
+    source_url = story.get("source_url", "")
+    source_line = f"\nOriginal source: {source_url}" if source_url else ""
     query = (
-        "Fact-check these claims from a news post. For each claim, state whether it is "
-        "ACCURATE, INACCURATE, EXAGGERATED, or UNVERIFIABLE. Be specific and cite evidence. "
-        "At the end, give a one-line overall verdict: PASS (all accurate) or ISSUES FOUND.\n\n"
-        f"Claims:\n\n{plain[:1500]}"
+        "You are fact-checking a news post for publication. Search the web to verify the specific "
+        "factual claims below against current sources.\n\n"
+        "IMPORTANT RULES:\n"
+        "- Only flag claims YOU can DISPROVE with evidence. Do NOT flag claims just because you cannot verify them.\n"
+        "- UNVERIFIABLE is NOT the same as INACCURATE. Do not treat them the same.\n"
+        "- If the story is ABOUT something misleading/inaccurate (e.g. 'Company X inflated stats'), "
+        "that is the story's topic — do not confuse the topic with an error in the post.\n"
+        "- For each claim: ACCURATE / INACCURATE (with source) / UNVERIFIABLE.\n"
+        "- Final line must be exactly one of: VERDICT: PASS or VERDICT: ISSUES FOUND\n"
+        "- Only use ISSUES FOUND if you found at least one INACCURATE claim with a source.\n\n"
+        f"Post to check:{source_line}\n\n{plain[:1500]}"
     )
 
     result = subprocess.run(
-        ["pwm", "ask", query],
+        ["pwm", "ask", "--intent", "standard", query],
         capture_output=True, text=True, timeout=90,
         env={**os.environ, "HOME": os.path.expanduser("~")},
     )
@@ -1192,9 +1304,9 @@ def handle_factcheck():
     # Use full verdict for issue detection, truncated for LLM correction prompt
     verdict = verdict_raw[:3000]
 
-    # Determine if issues were found
-    verdict_lower = verdict.lower()
-    has_issues = any(w in verdict_lower for w in ["inaccurate", "exaggerated", "issues found", "incorrect", "misleading", "false"])
+    # Only trigger on explicit VERDICT: ISSUES FOUND in the last 3 lines
+    verdict_tail = "\n".join(verdict_raw.strip().splitlines()[-3:]).lower()
+    has_issues = "verdict: issues found" in verdict_tail
 
     if not has_issues:
         if progress_msg_id:
@@ -1237,13 +1349,55 @@ def handle_factcheck():
     )
     summary, _ = call_llm(summary_prompt, "")
     if not summary:
-        summary = "Applied factual corrections"
+        summary = "Factual corrections proposed"
     summary = summary.strip().strip('"')[:120]
 
-    # Apply the correction
-    edit_path = _derive_edit_path(draft_path)
+    # Save proposed correction to temp path \u2014 do NOT apply yet
+    correction_path = _derive_edit_path(draft_path).replace(".html", "_fc_pending.html")
+    Path(correction_path).write_text(corrected_text)
+    story["pending_correction_path"] = correction_path
+    save_story(story)
+
+    # Ask Jacob to approve before applying
+    review_keyboard = json.dumps({"inline_keyboard": [
+        [{"text": "\u2705 Apply Correction", "callback_data": "nr_factcheck_apply"},
+         {"text": "\u274c Keep Original", "callback_data": "nr_factcheck_keep"}],
+    ]})
+    review_text = (
+        f"\u26a0\ufe0f <b>Fact-check found issues</b>\n\n"
+        f"Proposed change: {summary}\n\n"
+        f"Full verdict posted to Notifications. Apply correction?"
+    )
+    if progress_msg_id:
+        tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+            "text": review_text, "parse_mode": "HTML", "reply_markup": review_keyboard})
+    else:
+        tg("sendMessage", {"chat_id": CHAT_ID, "text": review_text,
+            "parse_mode": "HTML", "reply_markup": review_keyboard})
+
+    log_telemetry("factcheck:pending_review", story=story)
+    print(f"[FACTCHECK:PENDING] msg {MESSAGE_ID}: {summary}", flush=True)
+
+
+def handle_factcheck_apply():
+    """Apply the pending fact-check correction after user approval."""
+    story = get_story()
+    if not story:
+        send_msg(CHAT_ID, "\u26a0\ufe0f Story data not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    correction_path = story.get("pending_correction_path", "")
+    if not correction_path or not Path(correction_path).exists():
+        send_msg(CHAT_ID, "\u26a0\ufe0f Pending correction not found \u2014 tap Fact Check again.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    corrected_text = Path(correction_path).read_text()
+    edit_path = story.get("draft_path", "").replace(".html", "_fc.html")
     Path(edit_path).write_text(corrected_text)
     story["draft_path"] = edit_path
+    story.pop("pending_correction_path", None)
     save_story(story)
 
     subprocess.run([
@@ -1254,12 +1408,27 @@ def handle_factcheck():
         "--caption",
     ], capture_output=True, text=True, env={**os.environ, "HOME": os.path.expanduser("~")})
 
-    if progress_msg_id:
-        tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
-            "text": f"\u2705 Done fact-checking \u2014 {summary}"})
-
+    send_msg(CHAT_ID, "\u2705 Fact-check correction applied.")
     log_telemetry("factcheck:corrected", story=story)
-    print(f"[FACTCHECK:CORRECTED] msg {MESSAGE_ID}: {summary}", flush=True)
+    set_keyboard(MAIN_KEYBOARD)
+    print(f"[FACTCHECK:APPLIED] msg {MESSAGE_ID}", flush=True)
+
+
+def handle_factcheck_keep():
+    """Discard pending fact-check correction, keep original post."""
+    story = get_story()
+    if story:
+        correction_path = story.pop("pending_correction_path", "")
+        if correction_path:
+            try:
+                Path(correction_path).unlink(missing_ok=True)
+            except Exception:
+                pass
+        save_story(story)
+    send_msg(CHAT_ID, "\u2705 Kept original \u2014 correction discarded.")
+    log_telemetry("factcheck:kept_original", story=story)
+    set_keyboard(MAIN_KEYBOARD)
+    print(f"[FACTCHECK:KEPT] msg {MESSAGE_ID}", flush=True)
 
 
 def handle_newsource():
@@ -1275,12 +1444,19 @@ def handle_newsource():
         send_msg(CHAT_ID, "⚠️ No title in story data.")
         return
 
+    # Unescape HTML entities, strip leading emoji and "Source: " prefix
+    import re as _re
+    from html import unescape as _unescape
+    search_query = _unescape(title)
+    search_query = _re.sub(r'^[\U00010000-\U0010ffff\U0001f000-\U0001f9ff\s]+', '', search_query).strip()
+    search_query = _re.sub(r'^[A-Za-z]+:\s*', '', search_query).strip() or _unescape(title)
+
     send_msg(CHAT_ID, "🔎 Searching for sources...")
 
     real_home = os.environ.get("ALEF_AGENT_REAL_HOME", "/Users/jbd")
     try:
         result = subprocess.run(
-            ["gsearch", title, "--type", "news", "--time", "week", "--limit", "5"],
+            ["gsearch", search_query, "--type", "news", "--time", "week"],
             capture_output=True, text=True, timeout=30,
             env={**os.environ, "HOME": real_home},
         )
@@ -1380,12 +1556,18 @@ def handle_rethink_subline():
 
 def _enrich_search(title):
     """Run GSearch + Perplexity on topic, return combined research text."""
+    import re as _re
+    from html import unescape as _unescape
+    search_query = _unescape(title)
+    search_query = _re.sub(r'^[\U00010000-\U0010ffff\U0001f000-\U0001f9ff\s]+', '', search_query).strip()
+    search_query = _re.sub(r'^[A-Za-z]+:\s*', '', search_query).strip() or _unescape(title)
+
     real_home = os.environ.get("ALEF_AGENT_REAL_HOME", "/Users/jbd")
     results = []
 
     try:
         r = subprocess.run(
-            ["gsearch", title, "--type", "news", "--time", "week", "--limit", "5"],
+            ["gsearch", search_query, "--type", "news", "--time", "week"],
             capture_output=True, text=True, timeout=30,
             env={**os.environ, "HOME": real_home},
         )
@@ -1687,8 +1869,10 @@ DISPATCH = {
     "nr_edit":          handle_edit,
     "nr_back":          handle_back,
     # Fact check + source
-    "nr_factcheck":     handle_factcheck,
-    "nr_newsource":     handle_newsource,
+    "nr_factcheck":       handle_factcheck,
+    "nr_factcheck_apply": handle_factcheck_apply,
+    "nr_factcheck_keep":  handle_factcheck_keep,
+    "nr_newsource":       handle_newsource,
     # Image sub-menu
     "nr_edit_image":    handle_edit_image,
     "nr_img_classic":   handle_image_classic,
@@ -1706,10 +1890,11 @@ DISPATCH = {
     "nr_enrich_rewrite":   handle_enrich_rewrite,
     "nr_enrich_append":    handle_enrich_append,
     # Text rewrites
-    "nr_edit_shorter":  lambda: handle_edit_text("shorter"),
-    "nr_edit_punchier": lambda: handle_edit_text("punchier"),
-    "nr_edit_rewrite":  lambda: handle_edit_text("rewrite"),
-    "nr_edit_snarky":   lambda: handle_edit_text("snarky"),
+    "nr_edit_shorter":   lambda: handle_edit_text("shorter"),
+    "nr_edit_punchier":  lambda: handle_edit_text("punchier"),
+    "nr_edit_rewrite":   lambda: handle_edit_text("rewrite"),
+    "nr_edit_snarky":    lambda: handle_edit_text("snarky"),
+    "nr_edit_simplify":  lambda: handle_edit_text("simplify"),
     # Opinion sub-menu
     "nr_edit_opinion":  handle_edit_opinion,
     "nr_op_matters":    lambda: handle_add_opinion("matters"),

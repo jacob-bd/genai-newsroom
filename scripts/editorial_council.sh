@@ -89,7 +89,8 @@ PYEOF
   )
 fi
 
-COUNCIL_PROMPT="You are an editorial reviewer for Gen AI Spotlight, a curated AI news Telegram channel.
+COUNCIL_PROMPT=$(cat <<EOF
+You are an editorial reviewer for Gen AI Spotlight, a curated AI news Telegram channel.
 
 === EDITORIAL PROFILE ===
 $EDITORIAL_PROFILE
@@ -110,8 +111,22 @@ Criteria:
 - SKIP stories similar to recent drops listed above (same topic, same company, same angle)
 
 Use only rank numbers that appear in the stories above.
-Return ONLY a JSON array of story rank numbers to draft, e.g. [1, 3, 5, 7]
-No explanation. No markdown fences. No commentary. Just the JSON array."
+Return ONLY a JSON object with two arrays: "picks" and "skips".
+Each pick and skip must be an object with "rank" (the integer story rank) and "reason" (a single, very concise sentence explaining why you voted to DRAFT or SKIP this story).
+
+Example output format:
+{
+  "picks": [
+    {"rank": 1, "reason": "Major fundraise matches profile and signals enterprise momentum."}
+  ],
+  "skips": [
+    {"rank": 2, "reason": "Already covered extensively and feels too consumer-focused."}
+  ]
+}
+
+Do not include markdown fences. Do not include prose explanation outside the JSON. Return only the raw JSON object. Just the JSON.
+EOF
+)
 
 # ── Dry-run mode ───────────────────────────────────────────────
 if [ "$DRY_RUN" = "true" ]; then
@@ -285,34 +300,91 @@ MAX_APPROVED = $MAX_APPROVED
 PICKS_FILE = '$PICKS_FILE'
 VOTE_FILE = '$VOTE_TMPFILE'
 
-def extract_ranks(raw):
-    # Returns list of ints (may be empty for SKIP), or None for auth/error
+AGENT_NAMES = {
+    '$AGENT1': 'Claude',
+    '$AGENT2': 'Gemini',
+    '$AGENT3': 'Codex'
+}
+
+def extract_data(raw):
+    # Returns (picks, skips, reasons)
     raw = (raw or '').strip()
-    # Auth / fatal error: don't count as a valid vote
     low = raw.lower()
     if any(kw in low for kw in ['401', 'authenticate', 'invalid authentication', 'failed to authenticate']):
-        return None
-    # Try direct JSON parse
+        return None, None, None
+
+    cleaned = re.sub(r'^```(?:json)?\s*', '', raw)
+    cleaned = re.sub(r'\s*```$', '', cleaned).strip()
+
     try:
-        arr = json.loads(raw)
-        if isinstance(arr, list):
-            return [int(x) for x in arr if isinstance(x, (int, float)) and 1 <= int(x) <= 10]
-    except (json.JSONDecodeError, ValueError):
+        obj = json.loads(cleaned)
+        if isinstance(obj, list):
+            # Legacy list format support
+            ranks = [int(x) for x in obj if isinstance(x, (int, float)) and 1 <= int(x) <= 10]
+            return ranks, [], {}
+        elif isinstance(obj, dict):
+            picks = []
+            skips = []
+            reasons = {}
+            for item in obj.get('picks', []):
+                if isinstance(item, dict) and 'rank' in item:
+                    r = int(item['rank'])
+                    picks.append(r)
+                    if 'reason' in item:
+                        reasons[r] = item['reason']
+            for item in obj.get('skips', []):
+                if isinstance(item, dict) and 'rank' in item:
+                    r = int(item['rank'])
+                    skips.append(r)
+                    if 'reason' in item:
+                        reasons[r] = item['reason']
+            return picks, skips, reasons
+    except Exception:
         pass
-    # Regex fallback: find LAST [...] (agent may emit prose then the array)
-    # Use * not + so empty [] matches too
+
+    # Braces-balanced extraction fallback for dict
+    start = raw.find('{')
+    end = raw.rfind('}')
+    if start != -1 and end != -1:
+        try:
+            obj = json.loads(raw[start:end+1])
+            if isinstance(obj, dict):
+                picks = []
+                skips = []
+                reasons = {}
+                for item in obj.get('picks', []):
+                    if isinstance(item, dict) and 'rank' in item:
+                        r = int(item['rank'])
+                        picks.append(r)
+                        if 'reason' in item:
+                            reasons[r] = item['reason']
+                for item in obj.get('skips', []):
+                    if isinstance(item, dict) and 'rank' in item:
+                        r = int(item['rank'])
+                        skips.append(r)
+                        if 'reason' in item:
+                            reasons[r] = item['reason']
+                return picks, skips, reasons
+        except Exception:
+            pass
+
+    # Fallback to regex list
     matches = re.findall(r'\[[\d\s,]*\]', raw)
     for m in reversed(matches):
         try:
             arr = json.loads(m)
             if isinstance(arr, list):
-                return [int(x) for x in arr if isinstance(x, (int, float)) and 1 <= int(x) <= 10]
-        except (json.JSONDecodeError, ValueError):
+                return [int(x) for x in arr if isinstance(x, (int, float)) and 1 <= int(x) <= 10], [], {}
+        except Exception:
             pass
-    return []
+
+    return [], [], {}
 
 # Read agent results
 votes = {}
+agent_reasons = {} # (rank, agent_name) -> reason
+agent_actions = {} # (rank, agent_name) -> 'DRAFT' or 'SKIP'
+
 with open(VOTE_FILE) as f:
     for line in f:
         line = line.strip()
@@ -322,16 +394,24 @@ with open(VOTE_FILE) as f:
         if len(parts) != 2:
             continue
         agent_id, raw = parts
-        ranks = extract_ranks(raw)
-        if ranks is None:
-            print(f'  warning: agent {agent_id} returned auth/error — excluded from vote', file=sys.stderr)
+        agent_name = AGENT_NAMES.get(agent_id, agent_id)
+        picks, skips, reasons = extract_data(raw)
+        
+        if picks is None:
+            print(f'  warning: agent {agent_name} returned auth/error — excluded', file=sys.stderr)
             continue
-        if ranks:
-            print(f'  agent {agent_id} voted for ranks: {ranks}', file=sys.stderr)
-            for r in ranks:
-                votes[r] = votes.get(r, 0) + 1
-        else:
-            print(f'  agent {agent_id} voted SKIP (no ranks)', file=sys.stderr)
+            
+        # Log choices
+        print(f'  agent {agent_name} picks: {picks or \"SKIP\"}', file=sys.stderr)
+        
+        for r in picks:
+            votes[r] = votes.get(r, 0) + 1
+            agent_actions[(r, agent_name)] = "DRAFT"
+        for r in skips:
+            agent_actions[(r, agent_name)] = "SKIP"
+            
+        for r, reason in reasons.items():
+            agent_reasons[(r, agent_name)] = reason
 
 # Majority vote (>=2), sort by vote count desc, tie-break lowest rank, cap
 approved = sorted(
@@ -340,7 +420,7 @@ approved = sorted(
 )[:MAX_APPROVED]
 
 approved_ranks = [r for r, _ in approved]
-print(f'  majority approved: {approved_ranks} (from votes: {dict(votes)})', file=sys.stderr)
+print(f'  majority approved: {approved_ranks}', file=sys.stderr)
 
 _stories_meta = {}
 _approved_output = []
@@ -360,10 +440,39 @@ for _ln in open(PICKS_FILE):
             if _r in approved_ranks:
                 _approved_output.append(json.dumps(_o))
     except (json.JSONDecodeError, ValueError): pass
+
+# Compile and print reasoning table to stderr
+print('\n🗳️ === COUNCIL DECISION REASONING ===', file=sys.stderr)
+for r, meta in sorted(_stories_meta.items()):
+    title = meta.get('title', 'Unknown')
+    is_approved = r in approved_ranks
+    status_marker = "✅ APPROVED" if is_approved else "❌ SKIPPED"
+    print(f'\n{r}. {status_marker} | {title}', file=sys.stderr)
+    
+    for agent_name in ["Claude", "Gemini", "Codex"]:
+        action = agent_actions.get((r, agent_name), "SKIP" if is_approved else "UNKNOWN")
+        reason = agent_reasons.get((r, agent_name))
+        
+        # If they didn't explicitly comment, but action is known
+        action_label = "🟢 DRAFT" if action == "DRAFT" else "🔴 SKIP"
+        if reason:
+            print(f'   • {agent_name} ({action_label}): {reason}', file=sys.stderr)
+        elif action != "UNKNOWN":
+            print(f'   • {agent_name} ({action_label}): No detailed comment provided.', file=sys.stderr)
+
 _votes_path = f\"/tmp/council_votes_{os.environ.get('USER', 'user')}.json\"
 try:
     with open(_votes_path, 'w') as _vf:
-        json.dump({'votes': votes, 'approved_ranks': approved_ranks, 'stories': _stories_meta}, _vf)
+        # Save reasons with serialization support for tuple keys
+        serialized_reasons = {f\"{r}:{a}\": reas for (r, a), reas in agent_reasons.items()}
+        serialized_actions = {f\"{r}:{a}\": act for (r, a), act in agent_actions.items()}
+        json.dump({
+            'votes': votes,
+            'approved_ranks': approved_ranks,
+            'stories': _stories_meta,
+            'reasons': serialized_reasons,
+            'actions': serialized_actions
+        }, _vf)
 except OSError as _e:
     print(f'  warn: could not write votes file: {_e}', file=sys.stderr)
 

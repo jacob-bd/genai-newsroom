@@ -35,6 +35,15 @@ from pathlib import Path
 
 import requests
 
+# Dedup DB — record posted URLs so future scans don't re-find them
+_SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(_SCRIPT_DIR))
+try:
+    from dedup_db import DedupDB
+    _DEDUP_DB = DedupDB()
+except Exception:
+    _DEDUP_DB = None
+
 WORKSPACE = Path(os.path.expanduser("~/.alef-agent/workspace"))
 PENDING_FILE = WORKSPACE / "newsroom/data/newsroom_pending.json"
 WHITEBOARD = WORKSPACE / "newsroom/data/newsroom_whiteboard.md"
@@ -244,6 +253,19 @@ def main():
         "created_at": datetime.now().isoformat(),
     }
     save_pending(pending)
+
+    # Record to dedup DB so future scans don't re-find this story
+    if _DEDUP_DB and args.source_url:
+        try:
+            _DEDUP_DB.record_published(
+                title=title,
+                date=datetime.now().strftime("%Y-%m-%d"),
+                message_id=int(msg_id),
+                telegram_link=f"https://t.me/c/3889167143/{msg_id}",
+                source_url=args.source_url,
+            )
+        except Exception as e:
+            print(f"[warn] dedup record failed: {e}", flush=True)
 
     # Update whiteboard
     update_whiteboard(args.slug, msg_id, args.image)
