@@ -289,21 +289,28 @@ trap cleanup_all EXIT
 
 for AGENT_ID in "${AGENTS[@]}"; do
   # Each line: agent_id<TAB>result_summary
-  RAW_CONTENT=$(cat "/tmp/result_${AGENT_ID}.txt" 2>/dev/null || echo "[]")
+  RAW_CONTENT=$(cat "/tmp/result_${AGENT_ID}.txt" 2>/dev/null | tr '\n' ' ' || echo "[]")
   printf '%s\t%s\n' "$AGENT_ID" "$RAW_CONTENT" >> "$VOTE_TMPFILE"
 done
 
-python3 -c "
+export _MAX_APPROVED="$MAX_APPROVED"
+export _PICKS_FILE="$PICKS_FILE"
+export _VOTE_TMPFILE="$VOTE_TMPFILE"
+export _AGENT1="$AGENT1"
+export _AGENT2="$AGENT2"
+export _AGENT3="$AGENT3"
+
+python3 << 'PYEOF'
 import json, re, sys, os
 
-MAX_APPROVED = $MAX_APPROVED
-PICKS_FILE = '$PICKS_FILE'
-VOTE_FILE = '$VOTE_TMPFILE'
+MAX_APPROVED = int(os.environ['_MAX_APPROVED'])
+PICKS_FILE = os.environ['_PICKS_FILE']
+VOTE_FILE = os.environ['_VOTE_TMPFILE']
 
 AGENT_NAMES = {
-    '$AGENT1': 'Claude',
-    '$AGENT2': 'Gemini',
-    '$AGENT3': 'Codex'
+    os.environ.get('_AGENT1', ''): 'Claude',
+    os.environ.get('_AGENT2', ''): 'Gemini',
+    os.environ.get('_AGENT3', ''): 'Codex'
 }
 
 def extract_data(raw):
@@ -402,7 +409,7 @@ with open(VOTE_FILE) as f:
             continue
             
         # Log choices
-        print(f'  agent {agent_name} picks: {picks or \"SKIP\"}', file=sys.stderr)
+        print(f'  agent {agent_name} picks: {picks or "SKIP"}', file=sys.stderr)
         
         for r in picks:
             votes[r] = votes.get(r, 0) + 1
@@ -460,12 +467,12 @@ for r, meta in sorted(_stories_meta.items()):
         elif action != "UNKNOWN":
             print(f'   • {agent_name} ({action_label}): No detailed comment provided.', file=sys.stderr)
 
-_votes_path = f\"/tmp/council_votes_{os.environ.get('USER', 'user')}.json\"
+_votes_path = f"/tmp/council_votes_{os.environ.get('USER', 'user')}.json"
 try:
     with open(_votes_path, 'w') as _vf:
         # Save reasons with serialization support for tuple keys
-        serialized_reasons = {f\"{r}:{a}\": reas for (r, a), reas in agent_reasons.items()}
-        serialized_actions = {f\"{r}:{a}\": act for (r, a), act in agent_actions.items()}
+        serialized_reasons = {f"{r}:{a}": reas for (r, a), reas in agent_reasons.items()}
+        serialized_actions = {f"{r}:{a}": act for (r, a), act in agent_actions.items()}
         json.dump({
             'votes': votes,
             'approved_ranks': approved_ranks,
@@ -478,5 +485,5 @@ except OSError as _e:
 
 for _out in _approved_output:
     print(_out)
-" 2>&2
+PYEOF
 

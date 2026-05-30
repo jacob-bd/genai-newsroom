@@ -803,8 +803,10 @@ def _edit_image(image_path, draft_path=None):
     ]
     if draft_path and Path(draft_path).exists():
         cmd += ["--file", draft_path, "--caption"]
-    subprocess.run(cmd, capture_output=True, text=True,
-                   env={**os.environ, "HOME": os.path.expanduser("~")})
+    result = subprocess.run(cmd, capture_output=True, text=True,
+                            env={**os.environ, "HOME": os.path.expanduser("~")})
+    if result.returncode != 0:
+        print(f"[EDIT_IMAGE:err] {(result.stderr or '').strip()[:200]}", flush=True)
 
 
 def handle_image_classic():
@@ -1108,7 +1110,7 @@ def handle_custom_headline():
         "parse_mode": "HTML",
         "reply_markup": json.dumps({"force_reply": True, "selective": True}),
     })
-    set_keyboard(EDIT_KEYBOARD)
+    set_keyboard(get_edit_keyboard(story))
     log_telemetry("headline:custom_prompt", story=story)
 
 
@@ -1148,12 +1150,10 @@ def handle_edit_submit():
     progress = tg("sendMessage", {"chat_id": CHAT_ID, "text": "✏️ Applying combined edits..."})
     progress_msg_id = progress.get("result", {}).get("message_id")
 
-    text_toggles = [t for t in active if t in ("shorter", "punchier", "rewrite", "snarky", "simplify", "opinion")]
-    
     original = Path(draft_path).read_text()
     new_text = original
-    
-    if text_toggles:
+
+    if any(t in active for t in ("shorter", "punchier", "rewrite", "snarky", "simplify", "opinion")):
         instructions = []
         if "shorter" in active:
             instructions.append("- SHORTER: Cut the length aggressively to under 750 characters.")
@@ -1223,6 +1223,8 @@ def handle_edit_submit():
 
     card_changed = False
     if "headline" in active:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "🔄 Rethinking headline..."})
         h1, h2 = _generate_headline_from_draft(story["draft_path"], story.get("title", ""))
         if h1 and h2:
             if h2 and h2[0].islower():
@@ -1237,44 +1239,49 @@ def handle_edit_submit():
             card_changed = True
 
     if "subline" in active:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "💡 Rethinking subline..."})
         subline = _derive_subline(story["draft_path"])
         if subline:
             story["template_subline"] = subline
             card_changed = True
 
     if "highlight" in active:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "🖍 Picking highlights..."})
         headline = story.get("template_headline") or f"{story.get('headline_line1','')} {story.get('headline_line2','')}"
         highlight = _ai_pick_highlight(headline)
         if highlight:
             story["template_highlight"] = highlight
             card_changed = True
 
-    if card_changed or "headline" in active or "subline" in active or "highlight" in active:
+    if card_changed:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "🖼 Rendering card..."})
         h1 = story.get("headline_line1", "")
         h2 = story.get("headline_line2", "")
         ok, highlight = _render_current_template(story, h1, h2, story.get("image_path", ""))
-        if ok and highlight and "highlight" not in active: # keep the generated highlight unless explicitly requested to rethink
+        if ok and highlight and "highlight" not in active:
             story["template_highlight"] = highlight
         save_story(story)
-
-    edit_result = subprocess.run([
-        "python3", str(NEWSROOM / "scripts/telegram_edit.py"),
-        "--channel", "test",
-        "--message-id", MESSAGE_ID,
-        "--file", story["draft_path"],
-        "--caption",
-    ], capture_output=True, text=True, env={**os.environ, "HOME": os.path.expanduser("~")})
-
-    if edit_result.returncode != 0:
-        err_detail = (edit_result.stderr or "").strip()[:200]
-        if progress_msg_id:
-            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
-               "text": f"❌ Text applied, but Telegram caption edit failed: {err_detail}"})
-        set_keyboard(MAIN_KEYBOARD)
-        return
-
-    if card_changed:
+        # One call updates both image and caption — avoids flicker from two sequential edits
         _edit_image(story.get("image_path"), story["draft_path"])
+    else:
+        edit_result = subprocess.run([
+            "python3", str(NEWSROOM / "scripts/telegram_edit.py"),
+            "--channel", "test",
+            "--message-id", MESSAGE_ID,
+            "--file", story["draft_path"],
+            "--caption",
+        ], capture_output=True, text=True, env={**os.environ, "HOME": os.path.expanduser("~")})
+
+        if edit_result.returncode != 0:
+            err_detail = (edit_result.stderr or "").strip()[:200]
+            if progress_msg_id:
+                tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                   "text": f"❌ Text applied, but Telegram caption edit failed: {err_detail}"})
+            set_keyboard(MAIN_KEYBOARD)
+            return
 
     if progress_msg_id:
         tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "✅ Done applying combined edits!"})
