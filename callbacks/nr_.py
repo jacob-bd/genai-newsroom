@@ -1195,9 +1195,13 @@ def handle_edit_submit():
             
             compression_prompt = (
                 "The following Telegram news post is too long and exceeds the 1024-character system limit. "
-                "Aggressively shorten it to under 900 characters. "
-                "Keep the headline, the most important facts, the Read more link, and the hashtags. "
-                "Drop any secondary details or filler words. Preserve all HTML tags exactly.\n\n"
+                "You MUST shorten it aggressively to fit. \n\n"
+                "STRICT RULES:\n"
+                "- The body text (excluding the bold headline, opinion block, and footer) must be AT MOST 2 sentences total.\n"
+                "- Drop any background context, secondary details, or descriptive adjectives.\n"
+                "- Keep the bold headline, the opinion block (if present), the 'Read more' line, and the hashtags.\n"
+                "- Preserve all HTML tags exactly.\n"
+                "- Return ONLY the final shortened text — no explanation, no prose commentary.\n\n"
                 "POST TO SHORTEN:\n" + rewritten
             )
             compressed, err = call_llm(compression_prompt, "")
