@@ -1191,10 +1191,25 @@ def handle_edit_submit():
             
         if len(rewritten) > 1024:
             if progress_msg_id:
-                tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
-                   "text": f"❌ Combined edits failed: rewrite is {len(rewritten)} chars (Telegram caption limit is 1024). Please try again with fewer options."})
-            set_keyboard(MAIN_KEYBOARD)
-            return
+                tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "⏳ Output over limit, compressing..."})
+            
+            compression_prompt = (
+                "The following Telegram news post is too long and exceeds the 1024-character system limit. "
+                "Aggressively shorten it to under 900 characters. "
+                "Keep the headline, the most important facts, the Read more link, and the hashtags. "
+                "Drop any secondary details or filler words. Preserve all HTML tags exactly.\n\n"
+                "POST TO SHORTEN:\n" + rewritten
+            )
+            compressed, err = call_llm(compression_prompt, "")
+            if not err and compressed and len(compressed) <= 1024:
+                rewritten = compressed
+            else:
+                err_msg = err or f"compressed output is still {len(compressed) if compressed else 'unknown'} chars"
+                if progress_msg_id:
+                    tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                       "text": f"❌ Combined edits failed (could not compress): {err_msg}"})
+                set_keyboard(MAIN_KEYBOARD)
+                return
             
         new_text = rewritten
         edit_path = _derive_edit_path(draft_path)
