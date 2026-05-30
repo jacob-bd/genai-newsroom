@@ -590,10 +590,9 @@ if [ "$LLM_SUCCESS" = true ] && [ -s "$PICKS_FILE" ] && [ "$NO_LLM" = false ]; t
       tail -20 /tmp/council_${USER}.log 2>/dev/null | sed 's/^/  [council] /' >&2 || true
     fi
 
-    if [ "$COUNCIL_COUNT" -gt 0 ]; then
-      # Post council selection summary to newsroom group (-1003682312998)
-      export COUNCIL_OUT
-      NOTIFICATION_TEXT=$(python3 <<'EOF'
+    # Always post council summary to newsroom group, regardless of approval count
+    export COUNCIL_OUT
+    NOTIFICATION_TEXT=$(python3 <<'EOF'
 import sys, os, json
 
 votes_path = f"/tmp/council_votes_{os.environ.get('USER', 'user')}.json"
@@ -653,17 +652,21 @@ if skipped:
         vote_str = f"({vc}/3)" if vc else "(0/3)"
         output.append(f"• {title} {vote_str}\n  🔗 {fmt_link(url, source)}")
 
-output.append("\n🚀 Auto-drafting initiated...")
+if approved_stories:
+    output.append("\n🚀 Auto-drafting initiated...")
+else:
+    output.append("\n🚫 No stories reached majority — all skipped this round.")
 print("\n".join(output))
 EOF
 )
-      NOTIFICATION_TEXT="${NOTIFICATION_TEXT}
+    NOTIFICATION_TEXT="${NOTIFICATION_TEXT}
 
 ${HEALTH_BLOCK}"
-      python3 "$SCRIPT_DIR/telegram_post.py" \
-        --channel "-1003682312998" \
-        --text "$NOTIFICATION_TEXT" >/dev/null 2>&1 || true
+    python3 "$SCRIPT_DIR/telegram_post.py" \
+      --channel "-1003682312998" \
+      --text "$NOTIFICATION_TEXT" >/dev/null 2>&1 || true
 
+    if [ "$COUNCIL_COUNT" -gt 0 ]; then
       echo "Auto-drafting approved stories..."
       echo "$COUNCIL_OUT" | bash "$SCRIPT_DIR/auto_draft.sh" \
         --enriched "$ENRICHED_FILE" \

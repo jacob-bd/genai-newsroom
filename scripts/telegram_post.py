@@ -159,7 +159,7 @@ def main():
             [{"text": "✅ Approve", "callback_data": "nr_approve"},
              {"text": "\U0001f5d1 Drop", "callback_data": "nr_drop"}],
             [{"text": "\U0001f50d Fact Check", "callback_data": "nr_factcheck"},
-             {"text": "\U0001f50e New Source", "callback_data": "nr_newsource"}],
+             {"text": "⚡ Enrich", "callback_data": "nr_enrich"}],
             [{"text": "✏️ Edit", "callback_data": "nr_edit"}],
         ]})
 

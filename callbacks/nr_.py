@@ -126,20 +126,28 @@ DROP_REASON_KEYBOARD = (
     [[_reason_items[i], _reason_items[i + 1]] for i in range(0, len(_reason_items), 2)]
     + [[{"text": "← Cancel", "callback_data": "nr_back"}]]
 )
-EDIT_KEYBOARD = [
-    [{"text": "\U0001f5bc New image", "callback_data": "nr_edit_image"},
-     {"text": "\U0001f3a8 Re-highlight", "callback_data": "nr_rehighlight"}],
-    [{"text": "✂️ Shorter", "callback_data": "nr_edit_shorter"},
-     {"text": "\U0001f525 Punchier", "callback_data": "nr_edit_punchier"}],
-    [{"text": "\U0001f4f0 Rewrite", "callback_data": "nr_edit_rewrite"},
-     {"text": "\U0001f608 Snarky", "callback_data": "nr_edit_snarky"}],
-    [{"text": "\U0001f4d6 Simplify", "callback_data": "nr_edit_simplify"}],
-    [{"text": "\U0001f504 Rethink Headline", "callback_data": "nr_rethink_headline"},
-     {"text": "\U0001f4a1 Rethink Subline", "callback_data": "nr_rethink_subline"}],
-    [{"text": "\U0001f4ac Add Opinion", "callback_data": "nr_edit_opinion"},
-     {"text": "✏️ Custom Headline", "callback_data": "nr_custom_headline"}],
-    [{"text": "« Back", "callback_data": "nr_back"}],
-]
+def get_edit_keyboard(story):
+    active = story.get("active_toggles", [])
+    
+    def label(toggle_name, text):
+        icon = "✅ " if toggle_name in active else "⬜️ "
+        return f"{icon}{text}"
+
+    return [
+        [{"text": label("shorter", "✂️ Shorter"), "callback_data": "nr_toggle_shorter"},
+         {"text": label("punchier", "🔥 Punchier"), "callback_data": "nr_toggle_punchier"}],
+        [{"text": label("rewrite", "📰 Rewrite"), "callback_data": "nr_toggle_rewrite"},
+         {"text": label("snarky", "😈 Snarky"), "callback_data": "nr_toggle_snarky"}],
+        [{"text": label("simplify", "📖 Simplify"), "callback_data": "nr_toggle_simplify"},
+         {"text": label("headline", "🔄 Rethink Headline"), "callback_data": "nr_toggle_headline"}],
+        [{"text": label("subline", "💡 Rethink Subline"), "callback_data": "nr_toggle_subline"},
+         {"text": label("highlight", "🖍 Re-highlight"), "callback_data": "nr_toggle_highlight"}],
+        [{"text": label("opinion", "💬 Add Opinion"), "callback_data": "nr_toggle_opinion"}],
+        [{"text": "✏️ Custom Headline", "callback_data": "nr_custom_headline"},
+         {"text": "🖼 New image", "callback_data": "nr_edit_image"}],
+        [{"text": "🟢 Submit Edits", "callback_data": "nr_edit_submit"},
+         {"text": "« Back", "callback_data": "nr_back"}],
+    ]
 IMAGE_KEYBOARD = [
     [{"text": "\U0001f5a4 Dark Editorial", "callback_data": "nr_img_t1"}],
     [{"text": "\U0001f3a8 Classic (Pillow)", "callback_data": "nr_img_classic"}],
@@ -593,7 +601,13 @@ def handle_drop_reason(reason):
 
 
 def handle_edit():
-    set_keyboard(EDIT_KEYBOARD)
+    story = get_story()
+    if story:
+        story["active_toggles"] = []
+        save_story(story)
+        set_keyboard(get_edit_keyboard(story))
+    else:
+        set_keyboard(get_edit_keyboard({}))
 
 
 def handle_back():
@@ -789,8 +803,10 @@ def _edit_image(image_path, draft_path=None):
     ]
     if draft_path and Path(draft_path).exists():
         cmd += ["--file", draft_path, "--caption"]
-    subprocess.run(cmd, capture_output=True, text=True,
-                   env={**os.environ, "HOME": os.path.expanduser("~")})
+    result = subprocess.run(cmd, capture_output=True, text=True,
+                            env={**os.environ, "HOME": os.path.expanduser("~")})
+    if result.returncode != 0:
+        print(f"[EDIT_IMAGE:err] {(result.stderr or '').strip()[:200]}", flush=True)
 
 
 def handle_image_classic():
@@ -1094,8 +1110,188 @@ def handle_custom_headline():
         "parse_mode": "HTML",
         "reply_markup": json.dumps({"force_reply": True, "selective": True}),
     })
-    set_keyboard(EDIT_KEYBOARD)
+    set_keyboard(get_edit_keyboard(story))
     log_telemetry("headline:custom_prompt", story=story)
+
+
+def handle_toggle(toggle_name):
+    story = get_story()
+    if not story:
+        send_msg(CHAT_ID, "⚠️ Story data not found.")
+        return
+    active = story.get("active_toggles", [])
+    if toggle_name in active:
+        active.remove(toggle_name)
+    else:
+        active.append(toggle_name)
+    story["active_toggles"] = active
+    save_story(story)
+    set_keyboard(get_edit_keyboard(story))
+
+
+def handle_edit_submit():
+    story = get_story()
+    if not story:
+        send_msg(CHAT_ID, "⚠️ Story data not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    active = story.get("active_toggles", [])
+    if not active:
+        tg("sendMessage", {"chat_id": CHAT_ID, "text": "⚠️ Please select at least one edit toggle first."})
+        return
+
+    draft_path = story.get("draft_path")
+    if not draft_path or not Path(draft_path).exists():
+        send_msg(CHAT_ID, "⚠️ Draft file not found.")
+        set_keyboard(MAIN_KEYBOARD)
+        return
+
+    progress = tg("sendMessage", {"chat_id": CHAT_ID, "text": "✏️ Applying combined edits..."})
+    progress_msg_id = progress.get("result", {}).get("message_id")
+
+    original = Path(draft_path).read_text()
+    new_text = original
+
+    if any(t in active for t in ("shorter", "punchier", "rewrite", "snarky", "simplify", "opinion")):
+        instructions = []
+        if "shorter" in active:
+            instructions.append("- SHORTER: Cut the length aggressively to under 750 characters.")
+        if "punchier" in active:
+            instructions.append("- PUNCHIER: Make the prose highly engaging, punchy, and high-energy.")
+        if "rewrite" in active:
+            instructions.append("- REWRITE: Apply a fresh, newsworthy angle to the facts.")
+        if "snarky" in active:
+            instructions.append("- SNARKY: Write in Jacob's voice: blunt, direct, zero corporate polish, exposing spin.")
+        if "simplify" in active:
+            instructions.append("- SIMPLIFY: Spell out acronyms and replace jargon with plain English, while keeping it smart.")
+        if "opinion" in active:
+            instructions.append("- OPINION: Append a 2-3 sentence opinion block immediately before the 'Read more' line. Place the label '💬 <b>Why this matters:</b>' on its own line.")
+
+        prompt = (
+            "You are editing a Telegram news post. Apply the following modifications to the post:\n"
+            + "\n".join(instructions) + "\n\n"
+            "CRITICAL RULES:\n"
+            "- Keep ALL essential news facts intact. Do NOT fabricate details.\n"
+            "- No em-dashes. No banned AI filler words (delve, tapestry, leverage, etc.).\n"
+            "- Preserve all HTML tags (`<b>`, `<a>`) exactly.\n"
+            "- The headline must remain unchanged (only the body sentences are modified).\n"
+            "- CRITICAL: The total output MUST be strictly under 950 characters. If it exceeds 1024 characters, the system will fail. Cut words aggressively to guarantee it is short.\n"
+            "- Return ONLY the final updated post text — no explanation, no prose commentary."
+        )
+        
+        rewritten, err = call_llm(prompt, original)
+        if err:
+            if progress_msg_id:
+                tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": f"❌ Combined edits failed: {err}"})
+            else:
+                send_msg(CHAT_ID, f"❌ Combined edits failed: {err}")
+            set_keyboard(MAIN_KEYBOARD)
+            return
+            
+        if len(rewritten) > 1024:
+            if progress_msg_id:
+                tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "⏳ Output over limit, compressing..."})
+            
+            compression_prompt = (
+                "The following Telegram news post is too long and exceeds the 1024-character system limit. "
+                "You MUST shorten it aggressively to fit. \n\n"
+                "STRICT RULES:\n"
+                "- The body text (excluding the bold headline, opinion block, and footer) must be AT MOST 3 sentences total.\n"
+                "- Drop any background context, secondary details, or descriptive adjectives.\n"
+                "- Keep the bold headline, the opinion block (if present), the 'Read more' line, and the hashtags.\n"
+                "- Preserve all HTML tags exactly.\n"
+                "- Return ONLY the final shortened text — no explanation, no prose commentary.\n\n"
+                "POST TO SHORTEN:\n" + rewritten
+            )
+            compressed, err = call_llm(compression_prompt, "")
+            if not err and compressed and len(compressed) <= 1024:
+                rewritten = compressed
+            else:
+                err_msg = err or f"compressed output is still {len(compressed) if compressed else 'unknown'} chars"
+                if progress_msg_id:
+                    tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                       "text": f"❌ Combined edits failed (could not compress): {err_msg}"})
+                set_keyboard(MAIN_KEYBOARD)
+                return
+            
+        new_text = rewritten
+        edit_path = _derive_edit_path(draft_path)
+        Path(edit_path).write_text(new_text)
+        story["draft_path"] = edit_path
+        save_story(story)
+
+    card_changed = False
+    if "headline" in active:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "🔄 Rethinking headline..."})
+        h1, h2 = _generate_headline_from_draft(story["draft_path"], story.get("title", ""))
+        if h1 and h2:
+            if h2 and h2[0].islower():
+                full = f"{h1} {h2}"
+                mid = len(full) // 2
+                idx = full.rfind(' ', 0, mid + 1)
+                if idx >= 0:
+                    h1, h2 = full[:idx], full[idx + 1:]
+            story["headline_line1"] = h1
+            story["headline_line2"] = h2
+            story["template_headline"] = f"{h1} {h2}"
+            card_changed = True
+
+    if "subline" in active:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "💡 Rethinking subline..."})
+        subline = _derive_subline(story["draft_path"])
+        if subline:
+            story["template_subline"] = subline
+            card_changed = True
+
+    if "highlight" in active:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "🖍 Picking highlights..."})
+        headline = story.get("template_headline") or f"{story.get('headline_line1','')} {story.get('headline_line2','')}"
+        highlight = _ai_pick_highlight(headline)
+        if highlight:
+            story["template_highlight"] = highlight
+            card_changed = True
+
+    if card_changed:
+        if progress_msg_id:
+            tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "🖼 Rendering card..."})
+        h1 = story.get("headline_line1", "")
+        h2 = story.get("headline_line2", "")
+        ok, highlight = _render_current_template(story, h1, h2, story.get("image_path", ""))
+        if ok and highlight and "highlight" not in active:
+            story["template_highlight"] = highlight
+        save_story(story)
+        # One call updates both image and caption — avoids flicker from two sequential edits
+        _edit_image(story.get("image_path"), story["draft_path"])
+    else:
+        edit_result = subprocess.run([
+            "python3", str(NEWSROOM / "scripts/telegram_edit.py"),
+            "--channel", "test",
+            "--message-id", MESSAGE_ID,
+            "--file", story["draft_path"],
+            "--caption",
+        ], capture_output=True, text=True, env={**os.environ, "HOME": os.path.expanduser("~")})
+
+        if edit_result.returncode != 0:
+            err_detail = (edit_result.stderr or "").strip()[:200]
+            if progress_msg_id:
+                tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id,
+                   "text": f"❌ Text applied, but Telegram caption edit failed: {err_detail}"})
+            set_keyboard(MAIN_KEYBOARD)
+            return
+
+    if progress_msg_id:
+        tg("editMessageText", {"chat_id": CHAT_ID, "message_id": progress_msg_id, "text": "✅ Done applying combined edits!"})
+
+    story["active_toggles"] = []
+    save_story(story)
+
+    log_telemetry("edit:combined", story=story)
+    set_keyboard(MAIN_KEYBOARD)
+    print(f"[EDIT:COMBINED] Applied to msg {MESSAGE_ID}", flush=True)
 
 
 def handle_edit_text(mode):
@@ -1890,6 +2086,16 @@ DISPATCH = {
     "nr_enrich_rewrite":   handle_enrich_rewrite,
     "nr_enrich_append":    handle_enrich_append,
     # Text rewrites
+    "nr_toggle_shorter":   lambda: handle_toggle("shorter"),
+    "nr_toggle_punchier":  lambda: handle_toggle("punchier"),
+    "nr_toggle_rewrite":   lambda: handle_toggle("rewrite"),
+    "nr_toggle_snarky":    lambda: handle_toggle("snarky"),
+    "nr_toggle_simplify":  lambda: handle_toggle("simplify"),
+    "nr_toggle_headline":  lambda: handle_toggle("headline"),
+    "nr_toggle_subline":   lambda: handle_toggle("subline"),
+    "nr_toggle_opinion":   lambda: handle_toggle("opinion"),
+    "nr_toggle_highlight": lambda: handle_toggle("highlight"),
+    "nr_edit_submit":      handle_edit_submit,
     "nr_edit_shorter":   lambda: handle_edit_text("shorter"),
     "nr_edit_punchier":  lambda: handle_edit_text("punchier"),
     "nr_edit_rewrite":   lambda: handle_edit_text("rewrite"),
